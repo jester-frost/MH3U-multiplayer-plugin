@@ -238,6 +238,8 @@ endif
 #   make cia -> mh3u-online-instalador.cia
 #---------------------------------------------------------------------------------
 .PHONY: cia arte
+# o template nao rastreia romfs/: a receita nova nao entrava no .3dsx
+FORCE_ROMFS := $(shell rm -f $(CURDIR)/$(TARGET).3dsx)
 arte:
 	python3 arte/gerar_arte.py
 
