@@ -34,16 +34,17 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 ### 1. Instalador (recomendado)
 
-> **Novo — em teste.** O instalador acabou de sair; o update que ele gera já
-> roda em Old 3DS, New 3DS e Azahar, mas o app em si ainda está sendo testado.
-> Se algo falhar, use o jeito 2 e avise.
+> **Novo.** Testado no Azahar (instala o update e o jogo entra no online); a
+> rodada em console está em andamento. O update que ele gera já roda em Old
+> 3DS, New 3DS e Azahar. Se algo falhar, use o jeito 2 e avise.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
 2. Abra o **MH3U Online**. Ele mostra se achou o seu MH3U (no SD ou no
    cartucho).
 3. Aperte **A**. O app lê o jogo **do seu console**, confere que é a versão
-   certa, aplica o patch e instala o **update** (~13 MB). Leva poucos segundos.
+   certa, aplica o patch e instala o **update** (~13 MB). A tela mostra cada
+   passo e a porcentagem; no fim aparece **CONCLUIDO**. Não desligue no meio.
 4. Abra o MH3U → **Ferry → Multiplayer**.
 
 - **Voltar ao jogo original:** abra o MH3U Online e aperte **Y** (remove o

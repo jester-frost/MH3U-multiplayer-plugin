@@ -103,6 +103,27 @@ static int desligar_luma(void)
     return n;
 }
 
+/*  O console so aparece quando o quadro troca: sem isto a tela fica parada
+ *  (parece travada) durante ler/descomprimir/aplicar, que levam segundos. */
+static void mostrar(void)
+{
+    gfxFlushBuffers(); gfxSwapBuffers(); gspWaitForVBlank();
+    gfxFlushBuffers(); gfxSwapBuffers(); gspWaitForVBlank();
+}
+
+static void faixa(const char *txt, int cor)
+{
+    consoleSelect(&baixo);
+    printf("\x1b[s\x1b[1;1H\x1b[%dm %-38s\x1b[0m\x1b[u", cor, txt);
+    mostrar();
+}
+
+static void passo(const char *txt)
+{
+    printf("%s\n", txt);
+    mostrar();
+}
+
 /* ------------------------------------------------------------ instalar */
 typedef struct { Handle cia; u64 off; } Destino;
 
@@ -127,7 +148,16 @@ static bool conferir(const char *nome, const uint8_t *p, uint32_t n, const uint8
 {
     uint8_t h[32]; sha256(p, n, h);
     bool ok = memcmp(h, esperado, 32) == 0;
-    printf("  %-24s %s\n", nome, ok ? "\x1b[32mok\x1b[0m" : "\x1b[31mDIFERENTE\x1b[0m");
+    printf("  %-24s %s", nome, ok ? "\x1b[32mok\x1b[0m\n" : "\x1b[31mDIFERENTE\x1b[0m");
+    if (!ok) {
+        /* p/ diagnostico: o que foi lido vai p/ o cartao */
+        char arq[64]; snprintf(arq, sizeof arq, "sdmc:/mh3u-online-%s.bin", nome);
+        for (char *c = arq + 18; *c; ++c) if (*c == ' ') *c = '_';
+        FILE *f = fopen(arq, "wb");
+        if (f) { fwrite(p, 1, n, f); fclose(f); }
+        printf(" (%lu B -> %s)\n", (unsigned long)n, arq + 5);
+    }
+    mostrar();
     return ok;
 }
 
@@ -137,9 +167,12 @@ static void instalar(const Receita *rec, const uint8_t *bps, uint32_t nbps, FS_M
     uint32_t nc = 0, nban = 0, nlogo = 0, nic = 0;
     Result r;
     int e;
+    bool ok_final = false;
 
     consoleSelect(&baixo); consoleClear();
-    printf("Lendo o MH3U do %s...\n", mt == MEDIATYPE_SD ? "cartao SD" : "cartucho");
+    printf("\n\n");
+    faixa("INSTALANDO -- nao desligue o console", 43);
+    passo(mt == MEDIATYPE_SD ? "Lendo o MH3U do cartao SD..." : "Lendo o MH3U do cartucho...");
     if (R_FAILED(r = ler_exefs(mt, ".code", &comp, &nc)) ||
         R_FAILED(r = ler_exefs(mt, "banner", &ban, &nban)) ||
         R_FAILED(r = ler_exefs(mt, "icon", &ic, &nic)) ||
@@ -155,11 +188,16 @@ static void instalar(const Receita *rec, const uint8_t *bps, uint32_t nbps, FS_M
     }
     code = malloc(rec->tam_code_alvo > td ? rec->tam_code_alvo : td);
     if (!code) { printf("\x1b[31mSem memoria.\x1b[0m\n"); goto fim; }
-    printf("Descomprimindo o codigo do jogo...\n");
+    passo("Descomprimindo o codigo do jogo...");
     if ((e = blz_descomprimir(comp, nc, code, td))) { printf("\x1b[31m%s\x1b[0m\n", nucleo_erro(e)); goto fim; }
     free(comp); comp = NULL;
 
-    printf("Conferindo:\n");
+    /*  SMDH 0x2018 = bloqueio de regiao. O Azahar entrega 0x7FFFFFFF (ele
+     *  libera a regiao na leitura); o console, o original do MH3U EUA (2).
+     *  Normaliza p/ o original -- e o que vai no update. */
+    if (nic >= 0x201C) { static const uint8_t eua[4] = { 2, 0, 0, 0 }; memcpy(ic + 0x2018, eua, 4); }
+
+    passo("Conferindo:");
     if (!conferir("codigo do jogo", code, td, rec->sha_code_base) ||
         !conferir("banner", ban, nban, rec->sha_banner) ||
         !conferir("logo", logo, nlogo, rec->sha_logo) ||
@@ -168,7 +206,7 @@ static void instalar(const Receita *rec, const uint8_t *bps, uint32_t nbps, FS_M
         goto fim;
     }
 
-    printf("Aplicando o patch do online...\n");
+    passo("Aplicando o patch do online...");
     uint32_t ta = 0;
     if ((e = bps_aplicar_no_lugar(bps, nbps, code, td, rec->tam_code_alvo, &ta))) {
         printf("\x1b[31m%s\x1b[0m\n", nucleo_erro(e)); goto fim;
@@ -176,7 +214,7 @@ static void instalar(const Receita *rec, const uint8_t *bps, uint32_t nbps, FS_M
     if (!conferir("codigo com o patch", code, ta, rec->sha_code_alvo)) goto fim;
     receita_icone(rec, ic, nic);
 
-    printf("Instalando o update %s...\n", rec->versao);
+    printf("Instalando o update %s...\n", rec->versao); mostrar();
     Destino d = { 0, 0 };
     if (R_FAILED(r = AM_StartCiaInstall(MEDIATYPE_SD, &d.cia))) {
         printf("\x1b[31mAM_StartCiaInstall: 0x%08lX\x1b[0m\n", r); goto fim;
@@ -192,6 +230,8 @@ static void instalar(const Receita *rec, const uint8_t *bps, uint32_t nbps, FS_M
         printf("\n\x1b[31mAM_FinishCiaInstall: 0x%08lX\x1b[0m\n", r); goto fim;
     }
     printf("\n\x1b[32mUpdate instalado!\x1b[0m\n");
+    faixa("CONCLUIDO", 42);
+    ok_final = true;
     int n = desligar_luma();
     if (n) printf("(%d arquivo(s) do plugin/Luma desligados)\n", n);
     printf("\nAbra o MH3U: Ferry -> Multiplayer.\n");
@@ -199,6 +239,7 @@ static void instalar(const Receita *rec, const uint8_t *bps, uint32_t nbps, FS_M
 
 fim:
     free(comp); free(ban); free(logo); free(ic); free(code);
+    if (!ok_final) faixa("FALHOU -- nada foi instalado", 41);
     printf("\nAperte B.\n");
 }
 

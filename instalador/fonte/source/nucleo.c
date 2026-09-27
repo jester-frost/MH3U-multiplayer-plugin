@@ -128,8 +128,18 @@ int blz_descomprimir(const uint8_t *comp, uint32_t n, uint8_t *out, uint32_t tam
 /* ================= BPS ================= */
 static uint32_t crc32(const uint8_t *p, uint32_t n)
 {
+    /* com tabela: bit a bit, 2 x 13 MB levava muito no 3DS (e no Azahar) */
+    static uint32_t t[256]; static int pronta = 0;
+    if (!pronta) {
+        for (uint32_t i = 0; i < 256; ++i) {
+            uint32_t c = i;
+            for (int k = 0; k < 8; ++k) c = (c >> 1) ^ (0xEDB88320 & -(c & 1));
+            t[i] = c;
+        }
+        pronta = 1;
+    }
     uint32_t c = 0xFFFFFFFF;
-    while (n--) { c ^= *p++; for (int k = 0; k < 8; ++k) c = (c >> 1) ^ (0xEDB88320 & -(c & 1)); }
+    while (n--) c = t[(c ^ *p++) & 0xFF] ^ (c >> 8);
     return ~c;
 }
 static int bps_num(const uint8_t *p, uint32_t n, uint32_t *pos, uint64_t *v)
