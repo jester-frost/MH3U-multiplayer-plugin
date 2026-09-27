@@ -24,9 +24,10 @@ consegue voltar).
 - **3DS / 2DS / New 3DS com Luma3DS v13+** (CFW).
 - MH3U **norte-americano** — título **`00040000000AE400`** (cartucho ou eShop).
   Outras regiões ainda não: os ganchos são da versão US.
-- Internet configurada no console.
-- Acesso ao servidor: este beta aponta para o **servidor de homologação** do
-  projeto, que só aceita os IPs liberados no firewall.
+- O **DNS do console apontando para o servidor** que você vai usar — o mesmo
+  passo dos outros jogos da stack. É por ele que o plugin acha o servidor.
+- Acesso ao servidor: o de homologação do projeto só aceita os IPs liberados
+  no firewall.
 
 ---
 
@@ -51,6 +52,9 @@ No **Luma3DS**:
    salve com START.
 2. Com o console ligado, abra o Rosalina (**L + ↓ + SELECT**) → **"Plugin
    Loader: Enabled"**.
+
+No **console**: Configurações de Internet → sua rede → DNS → Manual → primário
+= o IP do servidor, secundário `0.0.0.0`.
 
 O plugin não tem menu nem texto na tela. Só aparece algo em **vermelho** se ele
 não conseguir se instalar no jogo — aí ele fica fora do caminho e o jogo roda
@@ -93,9 +97,19 @@ própria:
 - **Robustez:** pedidos ao servidor são reenviados se se perdem, e a conexão
   se refaz sozinha se o servidor a derrubar.
 
-Para rodar o próprio servidor, a stack `mhxx` sobe o `mh3u-revival` com
-`./mhxx jogo mh3u on` — ver `docs/mh3u-3ds-beta-console.md` (seção do operador).
-Este beta vem compilado apontando para o servidor de homologação.
+## Servidor: qual o plugin usa
+
+O plugin é o **mesmo para qualquer servidor**. Ao ligar a rede ele escolhe:
+
+1. `sd:/mh3u-online.cfg` com `servidor=IP-ou-nome` — para teste, e para o
+   **emulador** (o Azahar resolve pelo DNS do PC, não do console);
+2. o **DNS do console** para `mh3u3ds.pretendo.cc` — o DNS da stack responde o
+   IP do servidor MH3U dela;
+3. o servidor oficial do projeto, embutido — console com DNS comum.
+
+Quem sobe o próprio servidor (stack `mhxx`: `./mhxx jogo mh3u on`) só precisa
+que os jogadores apontem o DNS do console para ele. Detalhes do operador em
+`docs/mh3u-3ds-beta-console.md`.
 
 A versão anterior (bridge HTTP, servidor achado pelo DNS `mh3u3ds.pretendo.cc`)
 está no histórico do git; o documento dela segue em

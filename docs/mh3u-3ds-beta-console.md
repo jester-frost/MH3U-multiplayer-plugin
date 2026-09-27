@@ -14,7 +14,7 @@ direta console⇄console (P2P), com relay do servidor quando o P2P não abre.
 |---|---|
 | Console | 3DS / 2DS / New 3DS com **Luma3DS v13 ou mais novo** (CFW) |
 | Jogo | **MH3U norte-americano** (`00040000000AE400`), cartucho ou eShop. Outras regiões ainda **não** (os endereços dos ganchos são da versão US). |
-| Rede | Internet configurada no console (Configurações do Sistema). O servidor de homologação só aceita os IPs liberados no firewall (hoje: a casa do Marcos). |
+| Rede | O **DNS do console apontando para o servidor** (o mesmo passo dos outros jogos). O servidor de homologação só aceita os IPs liberados no firewall (hoje: a casa do Marcos). |
 
 ## Os dois arquivos
 
@@ -25,8 +25,12 @@ Do repositório `MHXX-LOCAL` (tag `mh3u-nex-beta1`):
 | `plugin/plugin-beta.3gx` | `/luma/plugins/00040000000AE400/mh3u-online.3gx` |
 | `patches/patchA-heap.ips` | `/luma/titles/00040000000AE400/code.ips` |
 
-- O **plugin** é o multiplayer. Aponta para o servidor `24.199.103.160`
-  (`make beta-3gx BETA_IP=...` gera para outro servidor).
+- O **plugin** é o multiplayer, e é o MESMO para qualquer servidor. Ao ligar a
+  rede ele escolhe o servidor nesta ordem:
+  1. `sd:/mh3u-online.cfg` com `servidor=IP-ou-nome` (teste; e o emulador);
+  2. o **DNS do console** para `mh3u3ds.pretendo.cc` — o DNS da stack responde
+     o IP do servidor MH3U dela (`hosts.conf`: `MH3U_IP`);
+  3. o servidor oficial embutido (`24.199.103.160`) — console com DNS comum.
 - O **patch de heap é obrigatório**: o NEX precisa de memória para a rede que o
   jogo original não reserva. Sem ele o plugin não consegue ligar a rede.
   (Reverso, para voltar ao jogo original: `patches/patchA-heap-reverse.ips`.)
@@ -38,7 +42,10 @@ Do repositório `MHXX-LOCAL` (tag `mh3u-nex-beta1`):
    **"Enable game patching"** → salve (START).
 2. **Plugin loader:** com o console ligado, abra o Rosalina (**L + ↓ + SELECT**)
    → **"Plugin Loader: Enabled"**.
-3. Abra o MH3U.
+3. **DNS:** Configurações de Internet → sua rede → DNS → Manual → primário =
+   o IP do servidor (`24.199.103.160` na homologação), secundário `0.0.0.0`.
+   O mesmo DNS dos outros jogos da stack.
+4. Abra o MH3U.
 
 Se algo der errado ao abrir, o plugin avisa em **vermelho** na tela e fica fora
 do caminho (o jogo roda normal). Com tudo certo, não aparece nada.
@@ -69,6 +76,10 @@ MH3U_NATCHECK=0                        # a 10025 e do nncs dos jogos de 3DS
 MH3U_RELAY_ADVERTISE=24.199.103.160
 ./mhxx jogo mh3u on
 ```
+
+O jogador aponta o DNS do console para a stack e usa o MESMO plugin: o nome
+`mh3u3ds.pretendo.cc` resolve para o `MH3U_IP` desta stack. Emulador (Azahar,
+que resolve pelo DNS do PC): `sdmc/mh3u-online.cfg` com `servidor=<IP>`.
 
 Firewall: `1223,1224/udp` (NEX) e `27100:27387/udp` (relay), além da `10025/udp`
 (NAT-check) que a stack já abre — liberados por IP de jogador.
