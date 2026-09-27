@@ -41,8 +41,8 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
-2. Abra o **MH3U Online**. Ele mostra se achou o seu MH3U (no SD ou no
-   cartucho).
+2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.0-beta2`, e no FBI o
+   título aparece como `v1.0.2`) e se achou o seu MH3U (no SD ou no cartucho).
 3. Aperte **A**. O app lê o jogo **do seu console**, confere que é a versão
    certa, aplica o patch e instala o **update** (~13 MB). A tela mostra cada
    passo e a porcentagem; no fim aparece **CONCLUIDO**. Não desligue no meio.

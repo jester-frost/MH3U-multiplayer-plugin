@@ -51,7 +51,7 @@ GFXBUILD	:=	$(BUILD)
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS	:=	-g -Wall -O2 -mword-relocations \
+CFLAGS	:=	-g -Wall -O2 -mword-relocations -DCOMMIT_INST=\"$(shell git -C $(TOPDIR) rev-parse --short HEAD 2>/dev/null)\" \
 			-ffunction-sections \
 			$(ARCH)
 
@@ -243,8 +243,14 @@ FORCE_ROMFS := $(shell rm -f $(CURDIR)/$(TARGET).3dsx)
 arte:
 	python3 arte/gerar_arte.py
 
+# versao do instalador = a do patch (plugin/nativo/Makefile) + o commit do build
+DIR_INST    := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
+VERSAO_INST := $(shell sed -n 's/^VERSAO *:= *//p' $(DIR_INST)../plugin/nativo/Makefile)
+VER_TITULO  := $(shell python3 -c "import re;m=re.match(r'(\d+)\.(\d+)(?:-beta(\d+))?','$(VERSAO_INST)');print((int(m[1])<<10)|(int(m[2])<<4)|int(m[3] or 0)) if m else 0")
+
 cia: $(BUILD)
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 	bannertool makebanner -i arte/banner.png -a arte/jingle.wav -o $(BUILD)/banner.bnr
 	bannertool makesmdh -s "MH3U Online" -l "MH3U Online - instalador do multiplayer online" -p "MH3U Online" -i arte/icone.png -o $(BUILD)/icone.smdh
-	makerom -f cia -o $(TARGET).cia -elf $(TARGET).elf -rsf instalador.rsf -icon $(BUILD)/icone.smdh -banner $(BUILD)/banner.bnr -target t -exefslogo
+	makerom -f cia -o $(TARGET).cia -elf $(TARGET).elf -rsf instalador.rsf -icon $(BUILD)/icone.smdh -banner $(BUILD)/banner.bnr -target t -exefslogo -ver $(VER_TITULO)
+	cp $(TARGET).cia $(TARGET)-$(VERSAO_INST).cia

@@ -441,7 +441,13 @@ AVISO
 
 
 TID_UPDATE = 0x0004000E000AE400
-VERSAO_UPDATE = 1 << 10                 # 1.0.0 (major<<10 | minor<<4 | micro)
+def versao_titulo():
+    """Versao do TITULO (TMD) a partir da VERSAO do Makefile: '1.0-betaN' -> 1.0.N.
+    Aparece no FBI/HOME -- da p/ saber qual update/instalador esta instalado."""
+    import re
+    m = re.match(r"(\d+)\.(\d+)(?:-beta(\d+))?", versao())
+    ma, mi, mc = int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)
+    return (ma << 10) | (mi << 4) | mc
 
 
 def fazer_cia(saida, d, nome, update=False, romfs_minimo=False):
@@ -497,7 +503,7 @@ def fazer_cia(saida, d, nome, update=False, romfs_minimo=False):
       "--not-encrypt")
     cia = os.path.join(d, f"MH3U-online-{ver}-{variante}" + ("-update" if update else "")
                        + ("-pequeno" if romfs_minimo else "") + ".cia")
-    extra_mk = ["-ver", str(VERSAO_UPDATE)] if update else []
+    extra_mk = ["-ver", str(versao_titulo())] if update else []
     subprocess.run(["makerom", "-f", "cia", "-o", cia, "-content", "mh3u-nativo.cxi:0:0", "-ignoresign"] + extra_mk,
                    cwd=d, check=True, stdout=subprocess.DEVNULL)
     os.remove(os.path.join(d, "mh3u-nativo.cxi"))

@@ -17,6 +17,9 @@
 #include <string.h>
 #include "nucleo.h"
 
+#ifndef COMMIT_INST
+#define COMMIT_INST "?"
+#endif
 #define TID_BASE    0x00040000000AE400ULL
 #define TID_UPDATE  0x0004000E000AE400ULL
 
@@ -255,6 +258,7 @@ static void tela(const Receita *rec, bool tem_base, FS_MediaType mt)
 {
     consoleSelect(&cima); consoleClear();
     printf("\x1b[1;2H\x1b[33mMH3U Online\x1b[0m  --  instalador %s\n", rec->versao);
+    printf("\x1b[2;2H\x1b[90mbuild %s\x1b[0m\n", COMMIT_INST);
     printf("\x1b[3;2HMultiplayer online p/ o Monster Hunter 3\n");
     printf("\x1b[4;2HUltimate de 3DS: salas, P2P e ate 4.\n");
 
