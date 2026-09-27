@@ -463,12 +463,22 @@ def fazer_cia(saida, d, nome, update=False, romfs_minimo=False):
     x("3dstool", "-ctf", "exefs", "exefs-nativo.bin", "--exefs-dir", "exefsdir", "--header", "exefs.hdr")
     hdr = "ncch.hdr"
     if update:
+        # Como o update OFICIAL (MH4U v1.3): o console so troca o base pelo
+        # update se a "versao remaster" do exheader (0x0E) for MAIOR que a do
+        # base (0). Com 0 ele ignorava o update e abria o jogo original (27/09,
+        # .85/.29: co-op local, nada no servidor; o Azahar nao confere). Jump ID
+        # (0x1C8) = o proprio update, tambem como no oficial.
+        exu = bytearray(open(os.path.join(d, "exh-nativo.bin"), "rb").read())
+        struct.pack_into("<H", exu, 0x0E, 1)
+        struct.pack_into("<Q", exu, 0x1C8, TID_UPDATE)
+        open(os.path.join(d, "exh-nativo.bin"), "wb").write(exu)
         # o NCCH do update leva o ID de update (particao 0x108, programa 0x118);
         # o exheader continua com o programa BASE -> mesmo save do jogo
         h = bytearray(open(os.path.join(d, "ncch.hdr"), "rb").read())
         assert h[0x100:0x104] == b"NCCH"
         struct.pack_into("<Q", h, 0x108, TID_UPDATE)
         struct.pack_into("<Q", h, 0x118, TID_UPDATE)
+        h[0x150:0x160] = b"CTR-U-AMHE".ljust(16, b"\0")    # codigo de produto de update
         hdr = "ncch-update.hdr"
         open(os.path.join(d, hdr), "wb").write(h)
     romfs = "romfs.bin"

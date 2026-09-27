@@ -11,7 +11,7 @@ O multiplayer local do jogo vira online:
 - até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
 > **Estado: beta.** Testado em Old 3DS, New 3DS e no emulador Azahar, os três
-> juntos na mesma sala e na mesma quest.
+> juntos na mesma sala e na mesma quest — inclusive pelo instalador.
 
 ---
 
@@ -34,9 +34,10 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 ### 1. Instalador (recomendado)
 
-> **Novo.** Testado no Azahar (instala o update e o jogo entra no online); a
-> rodada em console está em andamento. O update que ele gera já roda em Old
-> 3DS, New 3DS e Azahar. Se algo falhar, use o jeito 2 e avise.
+> **Validado** em Old 3DS, New 3DS e Azahar: o update instalado por ele entra
+> no online **mesmo com o "Enable game patching" do Luma desligado** — não
+> precisa de plugin loader nem de patch do Luma. (O Luma continua sendo o CFW:
+> é por ele que o FBI instala o `.cia`.)
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
