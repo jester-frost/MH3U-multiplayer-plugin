@@ -8,7 +8,7 @@ receita descreve o CIA byte a byte com
     L  literal (o que e nosso/gerado: cabecalhos, hashes, romfs minimo...)
     C  o .code do jogo base, descomprimido, com o code.bps aplicado
     B  o banner do jogo base          (ExeFS 'banner', intacto)
-    G  o logo do jogo base            (ExeFS 'logo', intacto)
+    (o logo vai literal: e um logo padrao do SDK, e varia entre copias)
     I  o icone do jogo base com os NOSSOS textos (patch de textos abaixo)
 
 e o app, no console do jogador, le esses quatro arquivos do MH3U DELE, confere
@@ -95,10 +95,13 @@ def main():
     assert all(len(b) <= 0xFFFF for _, b in patch_icone)
 
     # segmentos: onde aparecem .code/banner/logo/icone (o icone aparece de novo na meta)
+    # O LOGO (vinheta de abertura) vai LITERAL: e um dos logos padrao do SDK
+    # (o makerom embute: "Licensed"/"Nintendo"/...), e ha copias do MH3U EUA
+    # com logos diferentes (27/09: a do .85 tem o "Nintendo", a nossa o
+    # "Licensed") -- depender do logo do jogador recusava um jogo valido.
     marcas = [(arqs[".code"][0], arqs[".code"][1], b"C"),
               (arqs["banner"][0], arqs["banner"][1], b"B"),
-              (arqs["icon"][0], arqs["icon"][1], b"I"),
-              (arqs["logo"][0], arqs["logo"][1], b"G")]
+              (arqs["icon"][0], arqs["icon"][1], b"I")]
     if meta_sz:
         k = cia.find(icone, o_meta)
         assert k >= 0, "icone nao achado na meta"

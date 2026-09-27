@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     if (e) { printf("bps: %s\n", nucleo_erro(e)); return 1; }
     confere("code alvo", code, ta, r.sha_code_alvo);
     confere("banner", ban, nban, r.sha_banner);
-    confere("logo", logo, nlogo, r.sha_logo);
+    (void)r.sha_logo;   /* o logo vai literal na receita: o do jogador nao importa */
     confere("icone base", ic, nic, r.sha_icone);
     receita_icone(&r, ic, nic);
 

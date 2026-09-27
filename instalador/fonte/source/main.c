@@ -175,8 +175,7 @@ static void instalar(const Receita *rec, const uint8_t *bps, uint32_t nbps, FS_M
     passo(mt == MEDIATYPE_SD ? "Lendo o MH3U do cartao SD..." : "Lendo o MH3U do cartucho...");
     if (R_FAILED(r = ler_exefs(mt, ".code", &comp, &nc)) ||
         R_FAILED(r = ler_exefs(mt, "banner", &ban, &nban)) ||
-        R_FAILED(r = ler_exefs(mt, "icon", &ic, &nic)) ||
-        R_FAILED(r = ler_exefs(mt, "logo", &logo, &nlogo))) {
+        R_FAILED(r = ler_exefs(mt, "icon", &ic, &nic))) {
         printf("\x1b[31mNao consegui ler o jogo (0x%08lX).\x1b[0m\n", r);
         goto fim;
     }
@@ -200,7 +199,6 @@ static void instalar(const Receita *rec, const uint8_t *bps, uint32_t nbps, FS_M
     passo("Conferindo:");
     if (!conferir("codigo do jogo", code, td, rec->sha_code_base) ||
         !conferir("banner", ban, nban, rec->sha_banner) ||
-        !conferir("logo", logo, nlogo, rec->sha_logo) ||
         !conferir("icone", ic, nic, rec->sha_icone)) {
         printf("\x1b[31mO jogo nao e o esperado (regiao/versao).\x1b[0m\n");
         goto fim;
