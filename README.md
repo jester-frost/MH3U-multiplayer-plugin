@@ -1,116 +1,106 @@
-# MH3U Multiplayer — plugin de 3DS (online sem Wii U)
+# MH3U Multiplayer — online no 3DS (sem Wii U)
 
 Dá **multiplayer online** ao **Monster Hunter 3 Ultimate** de **Nintendo 3DS**,
-que de fábrica só tinha co-op local (Wi-Fi local / UDS) — o online era só no
-Wii U. O plugin troca o Wi-Fi local do jogo por:
+que de fábrica só tinha co-op local (Wi-Fi local) — o online era só no Wii U.
+O multiplayer local do jogo vira online:
 
 - **salas num servidor NEX** (o mesmo protocolo online dos outros Monster Hunter
-  de 3DS), e
-- **partida direta console ⇄ console (P2P)**, com relay do servidor só quando o
-  P2P não abre.
+  de 3DS);
+- **partida direta console ⇄ console (P2P)**, com relay do servidor quando o
+  P2P não abre;
+- até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
-Até **4 jogadores**, com troca de dono (quem sai deixa a sala com outro e
-consegue voltar).
-
-> **Estado: beta** (`mh3u-nex-beta1`). Testado no emulador (Azahar) e por
-> testes automáticos contra o servidor de homologação: elenco, 4 jogadores,
-> sala única, troca de dono, P2P → relay e rede com perda. **Primeira rodada em
-> console de verdade agora.**
+> **Estado: beta.** Testado em Old 3DS, New 3DS e no emulador Azahar, os três
+> juntos na mesma sala e na mesma quest.
 
 ---
 
-## O que você precisa
+## Três jeitos de instalar — escolha UM
 
-- **3DS / 2DS / New 3DS com Luma3DS v13+** (CFW).
-- MH3U **norte-americano** — título **`00040000000AE400`** (cartucho ou eShop).
-  Outras regiões ainda não: os ganchos são da versão US.
-- O **DNS do console apontando para o servidor** que você vai usar — o mesmo
-  passo dos outros jogos da stack. É por ele que o plugin acha o servidor.
-- Acesso ao servidor: o de homologação do projeto só aceita os IPs liberados
-  no firewall.
+| | O que é | Precisa de | Recomendado p/ |
+|---|---|---|---|
+| **1. Instalador** | um app que instala o **update** do online por cima do **seu** MH3U | só o FBI p/ instalar o app | **quem quer o jeito mais simples** |
+| **2. Patch nativo** | os mesmos arquivos do update, aplicados pelo Luma | "game patching" do Luma | quem não quer instalar título novo |
+| **3. Plugin** | o online como plugin do Luma (o jeito antigo) | "game patching" **e** plugin loader do Luma | emulador / quem já usa |
 
----
+Em todos: **MH3U norte-americano** (título `00040000000AE400`, cartucho ou
+eShop), **Luma3DS v13+** e o **DNS do console apontando para o servidor**
+(Configurações de Internet → sua rede → DNS → Manual → primário = IP do
+servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
-## Instalar
+> **Old 3DS / 2DS:** nos jeitos 1 e 2, **a tela preta ao abrir o jogo demora
+> alguns segundos a mais**. É o console reservando memória extra para o online
+> (80 MB, o mesmo que o Monster Hunter 4 Ultimate faz). É normal — não desligue.
 
-Dois arquivos no cartão SD:
+### 1. Instalador (recomendado)
+
+1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
+   **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
+2. Abra o **MH3U Online**. Ele mostra se achou o seu MH3U (no SD ou no
+   cartucho).
+3. Aperte **A**. O app lê o jogo **do seu console**, confere que é a versão
+   certa, aplica o patch e instala o **update** (~13 MB). Leva poucos segundos.
+4. Abra o MH3U → **Ferry → Multiplayer**.
+
+- **Voltar ao jogo original:** abra o MH3U Online e aperte **Y** (remove o
+  update). O save não é tocado.
+- O instalador desliga sozinho (renomeia para `.off`) o plugin e os patches
+  antigos do Luma para este jogo, que brigariam com o update.
+- Também há `instalador/mh3u-online-instalador.3dsx` para o Homebrew Launcher.
+
+### 2. Patch nativo (pelo Luma)
+
+Copie para o cartão SD:
 
 | Arquivo deste repositório | Vai no SD como |
+|---|---|
+| `nativo/code.bps` | `sd:/luma/titles/00040000000AE400/code.bps` |
+| `nativo/exheader.bin` | `sd:/luma/titles/00040000000AE400/exheader.bin` |
+
+Ligue o **"Enable game patching"** no Luma (segure SELECT ao ligar). Não deixe
+`code.ips` nem `.3gx` deste jogo junto. No **Azahar**: botão direito no jogo →
+*Open Mods Location* → `exefs/code.bps` e `exheader.bin`.
+
+### 3. Plugin (o jeito antigo)
+
+| Arquivo | Vai no SD como |
 |---|---|
 | `plugin/mh3u-online.3gx` | `sd:/luma/plugins/00040000000AE400/mh3u-online.3gx` |
 | `patch/code.ips` | `sd:/luma/titles/00040000000AE400/code.ips` |
 
-- O **plugin** é o multiplayer.
-- O **patch** é obrigatório: aumenta o heap do jogo para caber a rede do NEX.
-  Sem ele o plugin não liga a rede. Para voltar ao jogo original:
-  `patch/code-reverse.ips`.
-- Deixe **só um** `.3gx` na pasta do jogo (apague o `uds-espia.3gx` antigo).
-
-No **Luma3DS**:
-
-1. Segure **SELECT** ao ligar o console → marque **"Enable game patching"** →
-   salve com START.
-2. Com o console ligado, abra o Rosalina (**L + ↓ + SELECT**) → **"Plugin
-   Loader: Enabled"**.
-
-No **console**: Configurações de Internet → sua rede → DNS → Manual → primário
-= o IP do servidor, secundário `0.0.0.0`.
-
-O plugin não tem menu nem texto na tela. Só aparece algo em **vermelho** se ele
-não conseguir se instalar no jogo — aí ele fica fora do caminho e o jogo roda
-normal.
+"Enable game patching" + Rosalina (L + ↓ + SELECT) → "Plugin Loader: Enabled".
+Para voltar ao original: `patch/code-reverse.ips`.
 
 ---
 
 ## Jogar
 
-Como no multiplayer local: **Ferry → Multiplayer** (Port Tanzia).
+**Ferry → Multiplayer** (Port Tanzia). Entrar no Port já cria a sua sala no
+servidor; para entrar na de alguém: *Player Select* → a sala → entrar.
 
-- **Hospedar:** entrar no Port já cria a sala no servidor.
-- **Entrar:** *Player Select* → a sala do outro aparece → tocar e entrar.
-- **Troca de dono:** se o dono sai, outro jogador herda a sala; quem saiu acha a
-  sala de novo na busca e volta.
+**Dois aparelhos na mesma casa:** muitos roteadores não deixam um aparelho
+alcançar o outro pelo IP público da casa; aí a partida passa pelo **relay** do
+servidor (automático) e fica com um pouco mais de latência.
 
-**Dois consoles na mesma casa:** o P2P direto depende do roteador fazer
-"hairpin" (um aparelho alcançar o outro pelo IP público da casa). Muitos não
-fazem; aí os dois passam para o **relay** do servidor em ~6 s, sozinhos. Em
-casas diferentes o P2P direto deve fechar.
+## Nada do jogo é distribuído aqui
 
----
+- O **instalador** não traz nada da Capcom: ele lê o executável, o ícone e o
+  banner do **MH3U do próprio console**, confere os hashes (só aceita a versão
+  certa), aplica o `code.bps` (~126 KB, só as nossas mudanças) e monta o update
+  seguindo uma *receita* (`romfs/receita.bin`). O resultado é conferido por
+  SHA-256 antes de instalar. Código-fonte em `instalador/fonte/`.
+- O **patch nativo** e o **plugin** são só as nossas mudanças / o nosso código.
 
 ## Como funciona (resumo técnico)
 
-O cartucho de 3DS **não tem NEX** — o co-op dele é por UDS (Wi-Fi local). O
-plugin engancha as 17 chamadas de UDS do jogo (`nwm`) e responde por conta
-própria:
+O cartucho de 3DS não tem NEX — o co-op dele é por UDS (Wi-Fi local). O nosso
+código engancha as 17 chamadas de UDS do jogo e responde por conta própria:
+criar/buscar/entrar numa sala viram *matchmaking* NEX no
+[`mh3u-revival`](https://github.com/Matt-Wood-23/mh3u-revival) (com um patch do
+projeto); os pacotes da partida vão direto entre os consoles (UDP) ou pelo
+relay. No **patch nativo / instalador** esse código vive **dentro do executável
+do jogo** (sem plugin loader); no **plugin**, como plugin do Luma.
 
-- **Salas:** criar, buscar e entrar viram *matchmaking* NEX no
-  [`mh3u-revival`](https://github.com/Matt-Wood-23/mh3u-revival) (com um patch do
-  projeto). A busca do jogo recebe um beacon fabricado a partir das salas do
-  servidor; a sala é identificada pelo **dono**, então atualizar o status não
-  cria sala duplicada.
-- **Partida:** os pacotes do jogo vão **direto** entre os consoles (UDP), pelo
-  endereço que o NAT-check do servidor observou. O dono é o hub: dá o número de
-  cada jogador, repassa quem está na sala e encaminha cada pacote ao destino.
-- **Relay:** se o P2P não abre em 6 s, o console avisa o servidor
-  (`ReportNATTraversalResult`) e aquele par passa a usar o relay.
-- **Robustez:** pedidos ao servidor são reenviados se se perdem, e a conexão
-  se refaz sozinha se o servidor a derrubar.
-
-## Servidor: qual o plugin usa
-
-O plugin é o **mesmo para qualquer servidor**. Ao ligar a rede ele escolhe:
-
-1. `sd:/mh3u-online.cfg` com `servidor=IP-ou-nome` — para teste, e para o
-   **emulador** (o Azahar resolve pelo DNS do PC, não do console);
-2. o **DNS do console** para `mh3u3ds.pretendo.cc` — o DNS da stack responde o
-   IP do servidor MH3U dela;
-3. o servidor oficial do projeto, embutido — console com DNS comum.
-
-Quem sobe o próprio servidor (stack `mhxx`: `./mhxx jogo mh3u on`) só precisa
-que os jogadores apontem o DNS do console para ele. Detalhes do operador em
-`docs/mh3u-3ds-beta-console.md`.
-
-A versão anterior (bridge HTTP, servidor achado pelo DNS `mh3u3ds.pretendo.cc`)
-está no histórico do git; o documento dela segue em
-`docs/mh3u-coop-funcionando.pt-BR.md`.
+**Servidor:** o mesmo arquivo serve para qualquer servidor. Ordem:
+`sd:/mh3u-online.cfg` (`servidor=IP`, útil no emulador) → o DNS do console para
+`mh3u3ds.pretendo.cc` → o servidor do projeto embutido.
