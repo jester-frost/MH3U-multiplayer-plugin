@@ -111,6 +111,16 @@ servidor; para entrar na de alguém: *Player Select* → a sala → entrar.
 alcançar o outro pelo IP público da casa; aí a partida passa pelo **relay** do
 servidor (automático) e fica com um pouco mais de latência.
 
+## Problemas comuns
+
+- **Fora de casa, a conexão cai a cada minuto** (sozinho parece online; cai quando
+  alguém entra). O teste de conexão do 3DS (HTTP na porta 80 do servidor) não
+  está passando. Quem roda o servidor: a liberação do jogador precisa de
+  **TCP 80/443**, além das portas UDP do jogo. O convite já libera as duas
+  (corrigido no servidor do projeto em 29/09/2026).
+- **A busca não mostra sala nenhuma / não conecta:** falta o convite, ou o DNS do
+  console não aponta para o servidor.
+
 ## Nada do jogo é distribuído aqui
 
 - O **instalador** não traz nada da Capcom: ele lê o executável, o ícone e o
