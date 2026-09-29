@@ -8,6 +8,7 @@
  *  concluir a instalacao.
  *
  *    A      instalar / atualizar
+ *    X      convite do servidor (grava `convite=` no sd:/mh3u-online.cfg)
  *    Y      desinstalar o update (volta ao jogo original)
  *    START  sair
  */
@@ -24,6 +25,7 @@
 #define TID_UPDATE  0x0004000E000AE400ULL
 
 static PrintConsole cima, baixo;
+static void convite_ler(char *out, size_t cap);
 
 /* ------------------------------------------------------------------ util */
 static uint8_t *ler_romfs(const char *caminho, uint32_t *n)
@@ -237,6 +239,8 @@ static void instalar(const Receita *rec, const uint8_t *bps, uint32_t nbps, FS_M
     if (n) printf("(%d arquivo(s) do plugin/Luma desligados)\n", n);
     printf("\nAbra o MH3U: Ferry -> Multiplayer.\n");
     printf("Old 3DS: a tela preta ao abrir demora\num pouco mais -- e normal.\n");
+    { char c[32]; convite_ler(c, sizeof c);
+      if (!c[0]) printf("\x1b[33mSem convite:\x1b[0m se o servidor pede,\naperte B e depois X.\n"); }
 
 fim:
     free(comp); free(ban); free(logo); free(ic); free(code);
@@ -251,6 +255,93 @@ static void desinstalar(void)
     if (R_SUCCEEDED(r)) printf("\x1b[32mUpdate removido.\x1b[0m\nO MH3U volta ao original.\n");
     else printf("\x1b[31mNao removi (0x%08lX).\x1b[0m\n", r);
     printf("\nAperte B.\n");
+}
+
+/* --------------------------------------------------------------- convite */
+/*  O servidor do MH3U e trancado por IP. O convite (gerado pelo dono do
+ *  servidor: ./mhxx convite novo APELIDO) fica no sd:/mh3u-online.cfg; o jogo
+ *  le e manda a "batida" que libera o IP do console (tools/mh3u_convite.py). */
+#define CFG "sdmc:/mh3u-online.cfg"
+static const char ALFABETO[] = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+
+static void convite_ler(char *out, size_t cap)
+{
+    out[0] = 0;
+    FILE *f = fopen(CFG, "r");
+    if (!f) return;
+    char ln[128];
+    while (fgets(ln, sizeof ln, f))
+        if (!strncmp(ln, "convite=", 8)) {
+            size_t n = 0;
+            for (const char *p = ln + 8; *p && *p != '\r' && *p != '\n' && n < cap - 1; p++) out[n++] = *p;
+            out[n] = 0;
+        }
+    fclose(f);
+}
+
+/* troca (ou acrescenta) a linha convite=, sem tocar nas outras (servidor= etc.) */
+static bool convite_gravar(const char *cod)
+{
+    char resto[1024]; size_t nr = 0;
+    FILE *f = fopen(CFG, "r");
+    if (f) {
+        char ln[128];
+        while (fgets(ln, sizeof ln, f))
+            if (strncmp(ln, "convite=", 8)) {
+                size_t k = strlen(ln);
+                if (nr + k + 1 < sizeof resto) { memcpy(resto + nr, ln, k); nr += k; }
+            }
+        fclose(f);
+    }
+    if (nr && resto[nr - 1] != '\n') resto[nr++] = '\n';
+    f = fopen(CFG, "w");
+    if (!f) return false;
+    fwrite(resto, 1, nr, f);
+    fprintf(f, "convite=%s\n", cod);
+    fclose(f);
+    return true;
+}
+
+/* so letras/numeros, maiusculo; 8 do alfabeto do convite -> "XXXX-XXXX" */
+static bool convite_normalizar(const char *in, char out[10])
+{
+    char c8[9]; int n = 0;
+    for (; *in; in++) {
+        char c = *in;
+        if (c >= 'a' && c <= 'z') c -= 32;
+        if (c == '-' || c == ' ') continue;
+        if (n >= 8 || !strchr(ALFABETO, c)) return false;
+        c8[n++] = c;
+    }
+    if (n != 8) return false;
+    memcpy(out, c8, 4); out[4] = '-'; memcpy(out + 5, c8 + 4, 4); out[9] = 0;
+    return true;
+}
+
+static void convite_digitar(void)
+{
+    consoleSelect(&baixo); consoleClear();
+    char atual[32]; convite_ler(atual, sizeof atual);
+    SwkbdState kb;
+    swkbdInit(&kb, SWKBD_TYPE_QWERTY, 2, 12);
+    swkbdSetHintText(&kb, "convite (ex.: K7M4-2QXZ)");
+    swkbdSetValidation(&kb, SWKBD_NOTEMPTY_NOTBLANK, 0, 0);
+    if (atual[0]) swkbdSetInitialText(&kb, atual);
+    char buf[32] = {0};
+    if (swkbdInputText(&kb, buf, sizeof buf) != SWKBD_BUTTON_CONFIRM) {
+        printf("Convite nao alterado.\n\nAperte B.\n");
+        return;
+    }
+    char cod[10];
+    if (!convite_normalizar(buf, cod)) {
+        printf("\x1b[31mConvite invalido.\x1b[0m\n8 letras/numeros, ex.: K7M4-2QXZ\n"
+               "(sem 0, O, 1, I e L).\n\nAperte B.\n");
+        return;
+    }
+    if (convite_gravar(cod))
+        printf("\x1b[32mConvite gravado.\x1b[0m\n\nAo abrir, o MH3U libera a sua\n"
+               "rede no servidor sozinho.\n\nAperte B.\n");
+    else printf("\x1b[31mNao consegui gravar no cartao.\x1b[0m\n\nAperte B.\n");
 }
 
 /* ------------------------------------------------------------------ tela */
@@ -270,10 +361,15 @@ static void tela(const Receita *rec, bool tem_base, FS_MediaType mt)
     if (titulo_em(MEDIATYPE_SD, TID_UPDATE, &v))
         printf("\x1b[32minstalado\x1b[0m (v%u.%u.%u)\n", v >> 10, (v >> 4) & 0x3F, v & 0xF);
     else printf("nao instalado\n");
+    char conv[32]; convite_ler(conv, sizeof conv);
+    printf("\x1b[9;2HConvite: ");
+    if (conv[0]) printf("\x1b[32m%.5s****\x1b[0m\n", conv);
+    else printf("\x1b[33mnenhum\x1b[0m (X p/ digitar)\n");
 
     printf("\x1b[11;2H A      instalar / atualizar\n");
-    printf("\x1b[12;2H Y      desinstalar o update\n");
-    printf("\x1b[13;2H START  sair\n");
+    printf("\x1b[12;2H X      convite do servidor\n");
+    printf("\x1b[13;2H Y      desinstalar o update\n");
+    printf("\x1b[14;2H START  sair\n");
     printf("\x1b[16;2H\x1b[90mO app le o MH3U do SEU console e aplica o\n");
     printf("\x1b[17;2Hpatch; nada do jogo vem dentro dele.\x1b[0m\n");
     consoleSelect(&baixo);
@@ -314,6 +410,7 @@ int main(void)
                                  printf("\x1b[31mMH3U (EUA) nao encontrado no SD nem no cartucho.\x1b[0m\n\nAperte B.\n"); }
                 else instalar(&rec, bps, nbps, mt);
                 esperando_b = true;
+            } else if (k & KEY_X) { convite_digitar(); esperando_b = true;
             } else if (k & KEY_Y) { desinstalar(); esperando_b = true; }
         }
         gfxFlushBuffers(); gfxSwapBuffers(); gspWaitForVBlank();

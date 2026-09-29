@@ -41,12 +41,15 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
-2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.0-beta2`, e no FBI o
-   título aparece como `v1.0.2`) e se achou o seu MH3U (no SD ou no cartucho).
-3. Aperte **A**. O app lê o jogo **do seu console**, confere que é a versão
+2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.0-beta3`, e no FBI o
+   título aparece como `v1.0.3`) e se achou o seu MH3U (no SD ou no cartucho).
+3. **Convite:** se o servidor pede convite (o do projeto pede), aperte **X** e
+   digite o código que o dono do servidor te passou (ex.: `K7M4-2QXZ`). É uma
+   vez só: fica gravado no cartão. Veja [Convite](#convite).
+4. Aperte **A**. O app lê o jogo **do seu console**, confere que é a versão
    certa, aplica o patch e instala o **update** (~13 MB). A tela mostra cada
    passo e a porcentagem; no fim aparece **CONCLUIDO**. Não desligue no meio.
-4. Abra o MH3U → **Ferry → Multiplayer**.
+5. Abra o MH3U → **Ferry → Multiplayer**.
 
 - **Voltar ao jogo original:** abra o MH3U Online e aperte **Y** (remove o
   update). O save não é tocado.
@@ -76,6 +79,26 @@ Ligue o **"Enable game patching"** no Luma (segure SELECT ao ligar). Não deixe
 
 "Enable game patching" + Rosalina (L + ↓ + SELECT) → "Plugin Loader: Enabled".
 Para voltar ao original: `patch/code-reverse.ips`.
+
+---
+
+## Convite
+
+O servidor fica **fechado** para a internet: só entra quem tem convite. O dono
+do servidor gera um código para você (ex.: `K7M4-2QXZ`); você digita **uma vez**
+e nunca mais pensa nisso.
+
+- **Instalador:** tecla **X** (a tela mostra `Convite: K7M4-****` quando tem).
+- **Patch nativo / plugin / emulador:** crie `sd:/mh3u-online.cfg` com a linha
+  `convite=K7M4-2QXZ` (no Azahar, dentro da pasta `sdmc`).
+
+Toda vez que o MH3U abre, ele avisa o servidor com o convite e o servidor libera
+**a rede de onde você está jogando** por 24 h — em casa, no 4G ou na casa de um
+amigo, sem pedir nada a ninguém. O código não viaja pela rede (vai só uma
+assinatura dele). Se o dono revogar o seu convite, o acesso some em até 1 min.
+
+Sem convite, ou com convite recusado, o jogo abre normal, mas não acha o
+servidor (o online não conecta).
 
 ---
 
