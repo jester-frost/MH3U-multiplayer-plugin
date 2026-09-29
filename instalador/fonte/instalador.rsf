@@ -70,6 +70,14 @@ AccessControlInfo:
   CanAccessCore2          : false
   MemoryType              : Application
   SystemMode              : 64MB
+  # VRAM, so leitura: o teclado do sistema (swkbd, tecla X = convite) e um
+  # applet, e ao abrir um applet o libctru copia a tela atual lendo os
+  # framebuffers (aptConvertScreenForCapture). Sem este mapeamento o .cia
+  # morria ali (data abort em 0x1F4C7800, 28/09); pelo Homebrew Launcher o
+  # .3dsx herda o mapeamento e funciona.
+  MemoryMapping:
+   - 1f000000-1f5fffff:r
+
   SystemCallAccess:
     ControlMemory: 1
     QueryMemory: 2
