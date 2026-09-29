@@ -41,8 +41,8 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
-2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.0-beta3`, e no FBI o
-   título aparece como `v1.0.3`) e se achou o seu MH3U (no SD ou no cartucho).
+2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.0-beta4`, e no FBI o
+   título aparece como `v1.0.4`) e se achou o seu MH3U (no SD ou no cartucho).
 3. **Convite:** se o servidor pede convite (o do projeto pede), aperte **X** e
    digite o código que o dono do servidor te passou (ex.: `K7M4-2QXZ`). É uma
    vez só: fica gravado no cartão. Veja [Convite](#convite).
