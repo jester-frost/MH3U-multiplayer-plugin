@@ -41,8 +41,8 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
-2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.0-beta4`, e no FBI o
-   título aparece como `v1.0.4`) e se achou o seu MH3U (no SD ou no cartucho).
+2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.0-beta6`, e no FBI o
+   título aparece como `v1.0.6`) e se achou o seu MH3U (no SD ou no cartucho).
 3. **Convite:** se o servidor pede convite (o do projeto pede), aperte **X** e
    digite o código que o dono do servidor te passou (ex.: `K7M4-2QXZ`). É uma
    vez só: fica gravado no cartão. Veja [Convite](#convite).
@@ -106,6 +106,12 @@ servidor (o online não conecta).
 
 **Ferry → Multiplayer** (Port Tanzia). Entrar no Port já cria a sua sala no
 servidor; para entrar na de alguém: *Player Select* → a sala → entrar.
+
+**Friend Search** (Ferry → Hunter Search → *Choose a Port* → **Friend Search**,
+desde a `1.0-beta6`): as salas de quem é seu **amigo na lista do 3DS** aparecem
+**primeiro**, e as dos outros jogadores logo depois. O *Player Select* continua
+mostrando todas. Para valer, os dois precisam estar na `1.0-beta6` (o jogo entra
+no servidor com o código de amigo do console).
 
 **Dois aparelhos na mesma casa:** muitos roteadores não deixam um aparelho
 alcançar o outro pelo IP público da casa; aí a partida passa pelo **relay** do
