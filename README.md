@@ -41,8 +41,8 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
-2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.0-beta6`, e no FBI o
-   título aparece como `v1.0.6`) e se achou o seu MH3U (no SD ou no cartucho).
+2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.0-beta7`, e no FBI o
+   título aparece como `v1.0.7`) e se achou o seu MH3U (no SD ou no cartucho).
 3. **Convite:** se o servidor pede convite (o do projeto pede), aperte **X** e
    digite o código que o dono do servidor te passou (ex.: `K7M4-2QXZ`). É uma
    vez só: fica gravado no cartão. Veja [Convite](#convite).
@@ -112,6 +112,13 @@ desde a `1.0-beta6`): as salas de quem é seu **amigo na lista do 3DS** aparecem
 **primeiro**, e as dos outros jogadores logo depois. O *Player Select* continua
 mostrando todas. Para valer, os dois precisam estar na `1.0-beta6` (o jogo entra
 no servidor com o código de amigo do console).
+
+**Downloads / DLC** (tela inicial → *DLC*, desde a `1.0-beta7`): o menu de
+download volta a funcionar com o servidor do projeto. Dá para ler os
+**Content Previews** e baixar **Event Quests**, incluindo quests trazidas do
+**Monster Hunter Portable 3rd** que nunca saíram no MH3U (a primeira é *White
+Rabbit Beast!*, um Lagombi na Tundra, HR 6+). Como no jogo original, cada
+quest só aparece no balcão quando o seu HR alcança o rank dela.
 
 **Dois aparelhos na mesma casa:** muitos roteadores não deixam um aparelho
 alcançar o outro pelo IP público da casa; aí a partida passa pelo **relay** do
