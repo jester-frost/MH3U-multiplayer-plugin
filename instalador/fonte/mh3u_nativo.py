@@ -507,6 +507,10 @@ def fazer_cia(saida, d, nome, update=False, romfs_minimo=False):
     subprocess.run(["makerom", "-f", "cia", "-o", cia, "-content", "mh3u-nativo.cxi:0:0", "-ignoresign"] + extra_mk,
                    cwd=d, check=True, stdout=subprocess.DEVNULL)
     os.remove(os.path.join(d, "mh3u-nativo.cxi"))
+    if update:
+        # o makerom zera a parte do meio da versao (1.1 saia 1.0.0): grava no TMD
+        import cia_versao
+        cia_versao.gravar(cia, versao_titulo())
     commit = subprocess.check_output(["git", "-C", RAIZ, "rev-parse", "--short", "HEAD"], text=True).strip()
     extra = ("  - Build DEV (emuladores): log de diagnostico em sd:/mh3u-online.log.\n"
              if variante == "dev" else

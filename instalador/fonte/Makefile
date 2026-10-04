@@ -52,7 +52,7 @@ GFXBUILD	:=	$(BUILD)
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
 # versao do instalador e do patch (no repositorio de desenvolvimento vem do plugin/nativo/Makefile)
-VERSAO_INST := 1.1
+VERSAO_INST := 1.2
 
 CFLAGS	:=	-g -Wall -O2 -mword-relocations -DCOMMIT_INST=\"$(shell git -C $(TOPDIR) rev-parse --short HEAD 2>/dev/null)\" \
 			-ffunction-sections \
@@ -258,4 +258,5 @@ cia: $(BUILD)
 	bannertool makebanner -i arte/banner.png -a arte/discando.wav -o $(BUILD)/banner.bnr
 	bannertool makesmdh -s "MH3U Online" -l "MH3U Online - instalador do multiplayer online" -p "MH3U Online" -i arte/icone.png -o $(BUILD)/icone.smdh
 	makerom -f cia -o $(TARGET).cia -elf $(TARGET).elf -rsf instalador.rsf -icon $(BUILD)/icone.smdh -banner $(BUILD)/banner.bnr -target t -exefslogo -ver $(VER_TITULO)
+	python3 cia_versao.py $(TARGET).cia $(VER_TITULO)
 	cp $(TARGET).cia $(TARGET)-$(VERSAO_INST).cia

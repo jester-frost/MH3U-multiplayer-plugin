@@ -535,9 +535,13 @@ static void painel_operacao(void)
 
 static void desenhar_modal(void)
 {
-    g_z = 0.3f;
-    C2D_DrawRectSolid(0, 0, 0.3f, LARG_BASE, ALTURA, C2D_Color32(0x05, 0x0B, 0x14, 0xD8));
-    C2D_DrawRectSolid(MODAL.x + 4, MODAL.y + 5, 0.32f, MODAL.l, MODAL.a, C2D_Color32(0, 0, 0, 0x80));
+    /*  Tudo do modal vai acima do que a tela de tras desenha (ate 0.55: o texto
+     *  e 0.5, os losangos 0.4), senao os textos dela atravessam o escurecido e
+     *  a caixa. Com g_z = 0.48: fundo 0.56, caixa 0.58, bordas 0.68, texto 0.98
+     *  (a profundidade vai ate 1.0). */
+    g_z = 0.48f;
+    C2D_DrawRectSolid(0, 0, 0.56f, LARG_BASE, ALTURA, C2D_Color32(0x05, 0x0B, 0x14, 0xD8));
+    C2D_DrawRectSolid(MODAL.x + 4, MODAL.y + 5, 0.57f, MODAL.l, MODAL.a, C2D_Color32(0, 0, 0, 0x80));
     moldura(MODAL, COR_FUNDO, COR_LARANJA, 1);
     escrever_centro(LARG_BASE / 2, MODAL.y + 16, 0.6f, COR_CLARA, "%s", T(T_Q_REMOVER));
     escrever_centro(LARG_BASE / 2, MODAL.y + 42, 0.44f, COR_ACO, "%s", T(T_Q_REMOVER2));
@@ -878,6 +882,16 @@ static void instalar(void)
     if (!conferir(T(T_COD_PATCH), "codigo_com_o_patch", code, ta, rec->sha_code_alvo)) goto falhou;
     receita_icone(rec, ic, nic);
 
+    /*  Atualizar = tirar o update antigo e instalar o novo. Gravar por cima
+     *  deixa o AM decidir pela versao do titulo (e ele recusa igual ou menor);
+     *  sem o antigo, entra sempre o que o app tem. So aqui, depois de o jogo e
+     *  o patch novo estarem conferidos: se algo antes falhar, o antigo fica. */
+    if (titulo_em(MEDIATYPE_SD, TID_UPDATE, NULL)) {
+        op_etapa(T(T_REMOVENDO_ANTIGO), 5, 6);
+        if (R_SUCCEEDED(r = AM_DeleteTitle(MEDIATYPE_SD, TID_UPDATE))) op_linha(COR_ACO, "%s", T(T_ANTIGO_REMOVIDO));
+        else op_linha(COR_LUA, T(T_ANTIGO_FICOU), r);
+    }
+
     Destino d = { 0, 0 };
     if (R_FAILED(r = AM_StartCiaInstall(MEDIATYPE_SD, &d.cia))) {
         op_linha(COR_ERRO, "AM_StartCiaInstall: 0x%08lX", r); goto falhou;
@@ -1057,6 +1071,8 @@ int main(void)
         g_op.ativa = false;
         esperar_desenhando(4000);
         g_aba = 1;
+        esperar_desenhando(3000);
+        g_modal = MODAL_REMOVER; g_modal_foco = 1;       /* foto do modal por cima das abas */
 #endif
     }
 

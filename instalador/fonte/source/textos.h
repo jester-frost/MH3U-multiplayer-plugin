@@ -130,6 +130,9 @@ enum { IDIOMA_PT = 0, IDIOMA_EN, IDIOMA_ES, N_IDIOMAS };
     X(T_APLICANDO, "aplicando o patch do online", "applying the online patch", "aplicando el parche en línea") \
     X(T_COD_PATCH, "Código com o patch", "Patched code", "Código con el parche") \
     X(T_CANCELADA, "%s: instalação cancelada.", "%s: installation cancelled.", "%s: instalación cancelada.") \
+    X(T_REMOVENDO_ANTIGO, "removendo o patch antigo", "removing the old patch", "quitando el parche anterior") \
+    X(T_ANTIGO_REMOVIDO, "Patch antigo removido.", "Old patch removed.", "Parche anterior quitado.") \
+    X(T_ANTIGO_FICOU, "Não removi o antigo (0x%08lX); instalo por cima.", "Could not remove the old one (0x%08lX); installing over it.", "No quité el anterior (0x%08lX); instalo encima.") \
     X(T_INSTALADO, "Patch %s instalado!", "Patch %s installed!", "¡Parche %s instalado!") \
     X(T_LUMA_OFF, "%d arquivo(s) do plugin/Luma desligados (.off).", "%d plugin/Luma file(s) turned off (.off).", "%d archivo(s) del plugin/Luma desactivados (.off).") \
     X(T_ABRA, "Abra o MH3U: Ferry -> Multiplayer.", "Open MH3U: Ferry -> Multiplayer.", "Abre el MH3U: Ferry -> Multiplayer.") \
