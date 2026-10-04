@@ -10,8 +10,14 @@ O multiplayer local do jogo vira online:
   P2P não abre;
 - até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
-> **Estado: beta.** Testado em Old 3DS, New 3DS e no emulador Azahar, os três
+> **Versão 1.1.** Testado em Old 3DS, New 3DS e no emulador Azahar, os três
 > juntos na mesma sala e na mesma quest — inclusive pelo instalador.
+>
+> **Novidades da 1.1:** o instalador se **atualiza sozinho** (baixa as versões
+> novas deste repositório, conferidas por assinatura), tem abas **Patch atual**
+> e **Versões**, barra de progresso, toque na tela e textos em português, inglês
+> e espanhol; e o **menu de DLC funciona no emulador** sem mexer no `hosts` do PC
+> (basta o `servidor=` no `mh3u-online.cfg`).
 
 ---
 
@@ -21,7 +27,7 @@ O multiplayer local do jogo vira online:
 |---|---|---|---|
 | **1. Instalador** | um app que instala o **update** do online por cima do **seu** MH3U | só o FBI p/ instalar o app | **quem quer o jeito mais simples** |
 | **2. Patch nativo** | os mesmos arquivos do update, aplicados pelo Luma | "game patching" do Luma | quem não quer instalar título novo |
-| **3. Plugin** | o online como plugin do Luma (o jeito antigo) | "game patching" **e** plugin loader do Luma | emulador / quem já usa |
+| **3. Plugin** | o online como plugin do Luma (o jeito antigo) | "game patching" **e** plugin loader do Luma | quem já usa (**sem o menu de DLC**) |
 
 Em todos: **MH3U norte-americano** (título `00040000000AE400`, cartucho ou
 eShop), **Luma3DS v13+** e o **DNS do console apontando para o servidor**
@@ -41,8 +47,9 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
-2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.0-beta7`, e no FBI o
-   título aparece como `v1.0.7`) e se achou o seu MH3U (no SD ou no cartucho).
+2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.1`, e no FBI o título
+   aparece como `v1.1.0`), se achou o seu MH3U (no SD ou no cartucho) e procura
+   sozinho uma versão mais nova (aba **Versões**: o que mudou em cada uma).
 3. **Convite:** se o servidor pede convite (o do projeto pede), aperte **X** e
    digite o código que o dono do servidor te passou (ex.: `K7M4-2QXZ`). É uma
    vez só: fica gravado no cartão. Veja [Convite](#convite).
@@ -51,6 +58,9 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
    passo e a porcentagem; no fim aparece **CONCLUIDO**. Não desligue no meio.
 5. Abra o MH3U → **Ferry → Multiplayer**.
 
+- **Versão nova:** o app avisa ao abrir; **B** baixa (do GitHub, conferida pela
+  assinatura) e **A** instala no jogo. Se vier um app novo, ele mesmo se
+  atualiza: feche e abra de novo.
 - **Voltar ao jogo original:** abra o MH3U Online e aperte **Y** (remove o
   update). O save não é tocado.
 - O instalador desliga sozinho (renomeia para `.off`) o plugin e os patches
@@ -67,8 +77,18 @@ Copie para o cartão SD:
 | `nativo/exheader.bin` | `sd:/luma/titles/00040000000AE400/exheader.bin` |
 
 Ligue o **"Enable game patching"** no Luma (segure SELECT ao ligar). Não deixe
-`code.ips` nem `.3gx` deste jogo junto. No **Azahar**: botão direito no jogo →
-*Open Mods Location* → `exefs/code.bps` e `exheader.bin`.
+`code.ips` nem `.3gx` deste jogo junto.
+
+**No Azahar** (inclusive com o jogo em `.3ds`/`.cci`, que o instalador não
+enxerga): botão direito no jogo → *Open Mods Location* e deixe
+
+```
+load/mods/00040000000AE400/exheader.bin
+load/mods/00040000000AE400/exefs/code.bps
+```
+
+mais o `mh3u-online.cfg` na **raiz** do `sdmc` (ao lado da pasta `Nintendo 3DS`)
+com `servidor=` e `convite=` — o emulador não tem o DNS do console.
 
 ### 3. Plugin (o jeito antigo)
 
@@ -78,7 +98,11 @@ Ligue o **"Enable game patching"** no Luma (segure SELECT ao ligar). Não deixe
 | `patch/code.ips` | `sd:/luma/titles/00040000000AE400/code.ips` |
 
 "Enable game patching" + Rosalina (L + ↓ + SELECT) → "Plugin Loader: Enabled".
-Para voltar ao original: `patch/code-reverse.ips`.
+Para voltar ao original: `patch/code-reverse.ips`. No Azahar: *Emulation →
+Configure → System → Enable 3GX plugin loader*.
+
+> O plugin faz o online, mas **não** o menu de DLC: para baixar Event Quests,
+> use o instalador ou o patch nativo.
 
 ---
 
@@ -113,7 +137,7 @@ desde a `1.0-beta6`): as salas de quem é seu **amigo na lista do 3DS** aparecem
 mostrando todas. Para valer, os dois precisam estar na `1.0-beta6` (o jogo entra
 no servidor com o código de amigo do console).
 
-**Downloads / DLC** (tela inicial → *DLC*, desde a `1.0-beta7`): o menu de
+**Downloads / DLC** (tela inicial → *DLC*, desde a `1.0-beta7`; no emulador, desde a `1.1`): o menu de
 download volta a funcionar com o servidor do projeto. Dá para ler os
 **Content Previews** e baixar **Event Quests**, incluindo quests trazidas do
 **Monster Hunter Portable 3rd** que nunca saíram no MH3U (a primeira é *White

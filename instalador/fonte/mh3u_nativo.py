@@ -121,7 +121,7 @@ def pc_relativa(ins):
     if (ins >> 25) & 7 == 5: return True                 # b / bl
     if (ins >> 16) & 0xF == 0xF: return True              # Rn = pc
     if (ins >> 12) & 0xF == 0xF: return True              # Rd = pc
-    if (ins >> 26) & 3 == 0 and (ins & 0xF) == 0xF: return True   # Rm = pc
+    if (ins >> 26) & 3 == 0 and not (ins >> 25) & 1 and (ins & 0xF) == 0xF: return True   # Rm = pc (imediato nao tem Rm)
     return False
 
 
