@@ -31,7 +31,7 @@ entra `ldr pc,[pc,#-4]; .word destino`; as 2 instrucoes originais vao para o
 trampolim g_nativoTramp[i] = [orig0, orig1, ldr pc,[pc,#-4], alvo+8]. A entrada
 do jogo (0x100000: `bl 0x100024`) vira `bl nativo_entrada`.
 """
-import argparse, hashlib, os, shutil, struct, subprocess, sys
+import argparse, glob, hashlib, json, os, shutil, struct, subprocess, sys
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TID = "00040000000AE400"
@@ -42,6 +42,7 @@ SHA_CODE = "80db9caa329faacfaa580e435fce99614029a4bc201b5a898f56ff8a9a2b9006"
 HEAP_IPS = os.path.join(RAIZ, "patches", "patchA-heap.ips")
 BASE = 0x100000
 LDR_PC = 0xE51FF004            # ldr pc, [pc, #-4]
+NATIVO_MAX_GANCHOS = 40         # plugin/nativo/ctrpf_nativo.hpp
 NM = os.path.join(os.environ.get("DEVKITARM", "/opt/devkitpro/devkitARM"), "bin", "arm-none-eabi-nm")
 
 
@@ -151,7 +152,7 @@ def montar(elf, saida, modo80=False, de_a=None, n3ds_rapido=False):
     tab = sim["g_nativoDestinos"] - base
     tramp = sim["g_nativoTramp"] - base
     n = 0
-    while True:
+    while n < NATIVO_MAX_GANCHOS:          # a tabela pode estar cheia (sem o zero final)
         alvo, fn = u32(blob, tab + n * 8), u32(blob, tab + n * 8 + 4)
         if not alvo: break
         o = alvo - BASE
@@ -162,6 +163,17 @@ def montar(elf, saida, modo80=False, de_a=None, n3ds_rapido=False):
             p32(blob, tramp + n * 16 + k * 4, v)
         p32(code, o, LDR_PC); p32(code, o + 4, fn)
         n += 1
+
+    # dados do jogo (armaduras, itens...): plugin/nativo/dados/*.json, gerados pelo
+    # ~/mh3u-quests/tools/armaduras/gerar_set.py -- [{"off", "hex", "o_que"}],
+    # off no .code descomprimido. So escreve por cima de area zerada/livre (ver
+    # o gerador); entram no code.bps/code.ips e no reverse como o resto.
+    for js in sorted(glob.glob(os.path.join(RAIZ, "plugin", "nativo", "dados", "*.json"))):
+        trechos = json.load(open(js))
+        for t in trechos:
+            b = bytes.fromhex(t["hex"])
+            code[t["off"]:t["off"] + len(b)] = b
+        print(f"dados: {len(trechos)} trechos de {os.path.basename(js)}")
 
     # entrada: bl 0x100024 -> bl ESTAGIO (no text, executavel) -> nativo_entrada.
     # No hardware o segmento de dados e XN: o estagio pede ao kernel RWX para o
@@ -450,7 +462,7 @@ def versao_titulo():
     return (ma << 10) | (mi << 4) | mc
 
 
-def fazer_cia(saida, d, nome, update=False, romfs_minimo=False):
+def fazer_cia(saida, d, nome, update=False, romfs_minimo=False, romfs_conteudo=None):
     """CXI original -> troca exheader + code do ExeFS -> CXI -> CIA."""
     os.makedirs(d, exist_ok=True)
     x = lambda *c: subprocess.run(c, cwd=d, check=True, stdout=subprocess.DEVNULL)
@@ -492,8 +504,13 @@ def fazer_cia(saida, d, nome, update=False, romfs_minimo=False):
         # Update PEQUENO: o jogo le o romfs do jogo BASE (SelfNCCH RomFS); o do
         # update e outro arquivo (UpdateRomFS, o 'patch:' do MH4U) que o MH3U nao
         # usa. Entao o update leva so um romfs minimo.
-        rd = os.path.join(d, "romfs-min"); os.makedirs(rd, exist_ok=True)
-        open(os.path.join(rd, "mh3u-online.txt"), "w").write("MH3U online nativo -- romfs do update (vazio de proposito)\n")
+        rd = os.path.join(d, "romfs-min"); shutil.rmtree(rd, ignore_errors=True); os.makedirs(rd)
+        open(os.path.join(rd, "mh3u-online.txt"), "w").write("MH3U online nativo -- romfs do update\n")
+        if romfs_conteudo:
+            # conteudo novo do patch (modelos, sons, textos): o nativo monta ESTE romfs
+            # (SelfNCCH tipo 5, como o 'patch:' do MH4U) e o que estiver aqui substitui
+            # o arquivo do jogo -- ver ArquivoAbrir/MontarRomfsUpdate no main.cpp
+            shutil.copytree(romfs_conteudo, rd, dirs_exist_ok=True)
         x("3dstool", "-ctf", "romfs", "romfs-min.bin", "--romfs-dir", "romfs-min")
         romfs = "romfs-min.bin"
     x("3dstool", "-ctf", "cxi", "mh3u-nativo.cxi", "--header", hdr, "--exh", "exh-nativo.bin",
@@ -525,6 +542,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("acao", choices=["montar", "azahar", "tirar", "cia", "update", "ips", "bps"])
     ap.add_argument("--romfs-minimo", action="store_true", help="update pequeno: sem o romfs do jogo (le o do base)")
+    ap.add_argument("--romfs-conteudo", help="pasta com o conteudo novo do patch para o romfs do update (com --romfs-minimo)")
     ap.add_argument("--cia-dir", default=os.path.expanduser("~/mh3u-nc/cia"))
     ap.add_argument("--elf", default=os.path.join(RAIZ, "plugin", "nativo", "mh3u-nativo-dev.elf"))
     ap.add_argument("--saida", default=os.path.join(RAIZ, "plugin", "nativo", "saida"))
@@ -547,7 +565,7 @@ def main():
         fazer_bps(s); exheader_p_patch(s)
     if a.acao in ("cia", "update"):
         fazer_cia(s, a.cia_dir, os.path.basename(a.elf)[:-4], update=(a.acao == "update"),
-                  romfs_minimo=a.romfs_minimo)
+                  romfs_minimo=a.romfs_minimo, romfs_conteudo=a.romfs_conteudo)
     if a.acao == "azahar":
         os.makedirs(os.path.join(mod, "exefs"), exist_ok=True)
         shutil.copy(os.path.join(s, "code.bin"), os.path.join(mod, "exefs", "code.bin"))

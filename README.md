@@ -10,12 +10,21 @@ O multiplayer local do jogo vira online:
   P2P não abre;
 - até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
-> **Versão 1.2.** Testado em Old 3DS, New 3DS e no emulador Azahar, os três
-> juntos na mesma sala e na mesma quest — inclusive pelo instalador.
+> **Versão 1.3.** O online foi testado em Old 3DS, New 3DS e no emulador
+> Azahar, os três juntos na mesma sala e na mesma quest (até a 1.2). O conteúdo
+> novo da 1.3 foi testado no Azahar; nos consoles, ainda não.
 >
-> **Novidades da 1.2:** **Atualizar** remove o patch antigo antes de instalar o
-> novo, e a versão do título sai certa no FBI (a 1.1 saía como `1.0.0` e o 3DS
-> recusava gravá-la por cima da beta7 -- quem ficou na 1.1, atualize).
+> **Novidades da 1.3 — colaboração Metal Gear do MHP3rd:** as armaduras
+> **Snake** (homem) e **The Boss** (mulher), lâmina e atirador, com o modelo,
+> a textura e a cabeça do P3rd; o item **Big Boss Title**; a quest de evento
+> **MGS - Hunter Eater Mission** (Nibelsnarf, no menu de DLC) que dá o título; e
+> a forja no ferreiro (aparece ao obter o título). Com o set completo, os sons
+> mudam como no P3rd: menus, caixas, roleta de itens, partida para a quest,
+> vozes, o alerta quando o monstro te vê e a música de batalha. O conteúdo novo
+> vai **dentro do update** (por isso ele passou a ter ~44 MB).
+>
+> **Da 1.2:** **Atualizar** remove o patch antigo antes de instalar o
+> novo, e a versão do título sai certa no FBI.
 >
 > **Da 1.1:** o instalador se **atualiza sozinho** (baixa as versões
 > novas deste repositório, conferidas por assinatura), tem abas **Patch atual**
@@ -51,14 +60,14 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
-2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.2`, e no FBI o título
-   aparece como `v1.2.0`), se achou o seu MH3U (no SD ou no cartucho) e procura
+2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.3`, e no FBI o título
+   aparece como `v1.3.0`), se achou o seu MH3U (no SD ou no cartucho) e procura
    sozinho uma versão mais nova (aba **Versões**: o que mudou em cada uma).
 3. **Convite:** se o servidor pede convite (o do projeto pede), aperte **X** e
    digite o código que o dono do servidor te passou (ex.: `K7M4-2QXZ`). É uma
    vez só: fica gravado no cartão. Veja [Convite](#convite).
 4. Aperte **A**. O app lê o jogo **do seu console**, confere que é a versão
-   certa, aplica o patch e instala o **update** (~13 MB). A tela mostra cada
+   certa, aplica o patch e instala o **update** (~44 MB, com o conteúdo novo). A tela mostra cada
    passo e a porcentagem; no fim aparece **CONCLUIDO**. Não desligue no meio.
 5. Abra o MH3U → **Ferry → Multiplayer**.
 
@@ -80,6 +89,10 @@ Copie para o cartão SD:
 | `nativo/code.bps` | `sd:/luma/titles/00040000000AE400/code.bps` |
 | `nativo/exheader.bin` | `sd:/luma/titles/00040000000AE400/exheader.bin` |
 
+e a pasta **`nativo/romfs/`** inteira como `sd:/luma/titles/00040000000AE400/romfs/`
+(as armaduras, os textos e os sons novos da 1.3; sem ela as peças novas ficam
+invisíveis).
+
 Ligue o **"Enable game patching"** no Luma (segure SELECT ao ligar). Não deixe
 `code.ips` nem `.3gx` deste jogo junto.
 
@@ -89,6 +102,7 @@ enxerga): botão direito no jogo → *Open Mods Location* e deixe
 ```
 load/mods/00040000000AE400/exheader.bin
 load/mods/00040000000AE400/exefs/code.bps
+load/mods/00040000000AE400/romfs/...      (o conteúdo de nativo/romfs/)
 ```
 
 mais o `mh3u-online.cfg` na **raiz** do `sdmc` (ao lado da pasta `Nintendo 3DS`)
@@ -105,8 +119,8 @@ com `servidor=` e `convite=` — o emulador não tem o DNS do console.
 Para voltar ao original: `patch/code-reverse.ips`. No Azahar: *Emulation →
 Configure → System → Enable 3GX plugin loader*.
 
-> O plugin faz o online, mas **não** o menu de DLC: para baixar Event Quests,
-> use o instalador ou o patch nativo.
+> O plugin faz o online, mas **não** o menu de DLC nem o conteúdo da 1.3
+> (armaduras Snake/The Boss): para isso, use o instalador ou o patch nativo.
 
 ---
 
