@@ -59,6 +59,10 @@ typedef struct {
     const uint8_t *logo;   uint32_t tam_logo;
     const uint8_t *icone;  uint32_t tam_icone;    /* ja com receita_icone */
     const char *pasta_pecas;                      /* onde estao as pecas (formato 2) */
+    /* leitor das pecas: NULL = stdio em pasta_pecas (PC). No 3DS, pelo FS direto
+     * (o stdio intercalado com a gravacao no AM ficava lento e falhava no Old 3DS) */
+    int  (*ler_peca)(void *ctx, const uint8_t sha[32], uint32_t off, uint8_t *buf, uint32_t n);
+    void  *ctx_peca;
 } Pedacos;
 
 /* Emite o CIA em blocos: escrever(ctx, dados, n) devolve 0 se ok. Calcula o

@@ -78,6 +78,9 @@ enum { IDIOMA_PT = 0, IDIOMA_EN, IDIOMA_ES, N_IDIOMAS };
     X(T_Q_REMOVER, "Remover o patch?", "Remove the patch?", "¿Quitar el parche?") \
     X(T_Q_REMOVER2, "O MH3U volta a ser o original.", "MH3U goes back to the original.", "El MH3U vuelve a ser el original.") \
     X(T_REMOVER_BT, BT_A " Remover", BT_A " Remove", BT_A " Quitar") \
+    X(T_Q_SAIR, "Sair do MH3U Online?", "Exit MH3U Online?", "¿Salir de MH3U Online?") \
+    X(T_Q_SAIR2, "Volta para o menu HOME.", "Returns to the HOME menu.", "Vuelve al menú HOME.") \
+    X(T_SAIR_BT, BT_A " Sair", BT_A " Exit", BT_A " Salir") \
     X(T_CANCELAR_BT, BT_B " Cancelar", BT_B " Cancel", BT_B " Cancelar") \
     X(T_BT_INSTALAR, BT_A " Instalar", BT_A " Install", BT_A " Instalar") \
     X(T_BT_ATUALIZAR, BT_A " Atualizar jogo", BT_A " Update game", BT_A " Actualizar") \

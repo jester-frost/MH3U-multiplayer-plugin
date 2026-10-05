@@ -262,25 +262,29 @@ void peca_caminho(const char *pasta, const uint8_t sha[32], char *out, size_t ca
     snprintf(out, cap, "%s/%s.bin", pasta, hex);
 }
 
-/* uma peca do cartao, em blocos (no SHA do CIA e no escritor) */
+#define BLOCO_PECA 0x100000
+
+/* uma peca do cartao, em blocos de 1 MB (no SHA do CIA e no escritor) */
 static int montar_peca(const Pedacos *pc, const uint8_t *sha, uint32_t l, Sha256 *s, Escritor esc,
                        Progresso prog, void *ctx, uint64_t *feito, uint64_t total)
 {
-    char cam[192]; peca_caminho(pc->pasta_pecas ? pc->pasta_pecas : ".", sha, cam, sizeof cam);
-    FILE *f = fopen(cam, "rb");
-    if (!f) return E_PECA;
-    uint8_t *b = malloc(0x40000);
-    if (!b) { fclose(f); return E_MEM; }
+    FILE *f = NULL;
+    if (!pc->ler_peca) {
+        char cam[192]; peca_caminho(pc->pasta_pecas ? pc->pasta_pecas : ".", sha, cam, sizeof cam);
+        if (!(f = fopen(cam, "rb"))) return E_PECA;
+    }
+    uint8_t *b = malloc(BLOCO_PECA);
+    if (!b) { if (f) fclose(f); return E_MEM; }
     int e = OK;
     for (uint32_t k = 0; k < l && !e; ) {
-        uint32_t n = l - k > 0x40000 ? 0x40000 : l - k;
-        if (fread(b, 1, n, f) != n) { e = E_PECA; break; }
+        uint32_t n = l - k > BLOCO_PECA ? BLOCO_PECA : l - k;
+        if (f ? fread(b, 1, n, f) != n : pc->ler_peca(pc->ctx_peca, sha, k, b, n) != 0) { e = E_PECA; break; }
         sha256_add(s, b, n);
         if (esc(ctx, b, n)) e = E_ESCRITA;
         k += n; *feito += n;
         if (prog) prog(ctx, *feito, total);
     }
-    free(b); fclose(f);
+    free(b); if (f) fclose(f);
     return e;
 }
 

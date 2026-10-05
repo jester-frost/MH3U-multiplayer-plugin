@@ -120,7 +120,7 @@ static struct {
     char  rodape[72];
 } g_op;
 
-static enum { MODAL_NADA, MODAL_REMOVER } g_modal;
+static enum { MODAL_NADA, MODAL_REMOVER, MODAL_SAIR } g_modal;
 static int g_modal_foco;
 
 static C3D_RenderTarget *alvo_topo, *alvo_base;
@@ -464,7 +464,9 @@ static void aba_patch(void)
         float y = 94;
         if (g_tem_man && !strcmp(g_man.versao, g_jogo)) {
             int li = manifesto_idioma_mudancas(&g_man, g_idioma);
-            for (int i = 0; i < g_man.n_mudancas[li] && y < 140; ++i, y += 15) {
+            /* com o aviso (y 144) embaixo, cabem 3 linhas; sem ele, 4 */
+            float lim = tem_novidade() || jogo_desatualizado() ? 130 : 140;
+            for (int i = 0; i < g_man.n_mudancas[li] && y < lim; ++i, y += 15) {
                 losango(20, y + 7, 3, COR_LARANJA);
                 escrever(28, y, 0.42f, COR_CLARA, "%s", g_man.mudancas[li][i]);
             }
@@ -553,13 +555,14 @@ static void desenhar_modal(void)
     C2D_DrawRectSolid(0, 0, 0.56f, LARG_BASE, ALTURA, C2D_Color32(0x05, 0x0B, 0x14, 0xD8));
     C2D_DrawRectSolid(MODAL.x + 4, MODAL.y + 5, 0.57f, MODAL.l, MODAL.a, C2D_Color32(0, 0, 0, 0x80));
     moldura(MODAL, COR_FUNDO, COR_LARANJA, 1);
-    escrever_centro(LARG_BASE / 2, MODAL.y + 16, 0.6f, COR_CLARA, "%s", T(T_Q_REMOVER));
-    escrever_centro(LARG_BASE / 2, MODAL.y + 42, 0.44f, COR_ACO, "%s", T(T_Q_REMOVER2));
+    bool sair = g_modal == MODAL_SAIR;
+    escrever_centro(LARG_BASE / 2, MODAL.y + 16, 0.6f, COR_CLARA, "%s", T(sair ? T_Q_SAIR : T_Q_REMOVER));
+    escrever_centro(LARG_BASE / 2, MODAL.y + 42, 0.44f, COR_ACO, "%s", T(sair ? T_Q_SAIR2 : T_Q_REMOVER2));
     for (int b = 0; b < 2; ++b) {
         bool m = g_modal_foco == b;
         moldura(MODAL_BT[b], m ? COR_LARANJA : COR_PAINEL, m ? COR_LUA : COR_TRILHO, m);
         escrever_centro(MODAL_BT[b].x + MODAL_BT[b].l / 2, MODAL_BT[b].y + 7, 0.5f, m ? COR_NOITE : COR_CLARA,
-                        "%s", T(b == 0 ? T_REMOVER_BT : T_CANCELAR_BT));
+                        "%s", T(b == 0 ? (sair ? T_SAIR_BT : T_REMOVER_BT) : T_CANCELAR_BT));
     }
     g_z = 0;
 }
@@ -719,6 +722,20 @@ static void carregar_cache(void)
     } else pacote_livre(&p);
 }
 
+/*  Canal de teste: com "teste" em PASTA/canal.txt, o app le o manifesto do
+ *  branch "teste" do repositorio publico (mesma chave, mesma conferencia).
+ *  Uma versao nova vai primeiro para la; os consoles de teste pegam pelo B,
+ *  sem FBI; aprovada, o manifesto vai para o main (todos). */
+static const char *canal(void)
+{
+    static char c[8];
+    uint32_t n = 0; uint8_t *t = ler_arquivo(PASTA "/canal.txt", &n);
+    bool teste = t && n >= 5 && !memcmp(t, "teste", 5);
+    free(t);
+    snprintf(c, sizeof c, "%s", teste ? "teste" : "main");
+    return c;
+}
+
 static void procurar(void)
 {
     g_net = NET_PROCURANDO;
@@ -726,8 +743,11 @@ static void procurar(void)
     desenhar();
     uint8_t *txt = NULL, *sig = NULL; uint32_t nt = 0, ns = 0;
     const char *rot = T(T_ATUALIZACAO);
-    int e = rede_baixar("main/atualizacao/versao.txt", 16 * 1024, &txt, &nt, prog_rede, (void *)rot);
-    if (!e) e = rede_baixar("main/atualizacao/versao.sig", 256, &sig, &ns, prog_rede, (void *)rot);
+    char cam[48]; const char *ref = canal();
+    snprintf(cam, sizeof cam, "%s/atualizacao/versao.txt", ref);
+    int e = rede_baixar(cam, 16 * 1024, &txt, &nt, prog_rede, (void *)rot);
+    snprintf(cam, sizeof cam, "%s/atualizacao/versao.sig", ref);
+    if (!e) e = rede_baixar(cam, 256, &sig, &ns, prog_rede, (void *)rot);
     Manifesto m;
     if (e) { g_net = NET_ERRO; snprintf(g_net_erro, sizeof g_net_erro, "%s", rede_erro(e)); }
     else if (!manifesto_valido(txt, nt, sig, ns, &m)) { g_net = NET_ERRO; snprintf(g_net_erro, sizeof g_net_erro, "%s", T(T_MANIF_INVALIDO)); }
@@ -908,14 +928,90 @@ static void baixar_atualizacao(void)
 }
 
 /* ------------------------------------------------------------ instalar */
-typedef struct { Handle cia; u64 off; } Destino;
+/*  O AM do console so aceita gravacoes com tamanho multiplo de 16 (0xE0E083F2,
+ *  "misaligned size"; o Azahar aceita qualquer um): o .85 recusou o resto de
+ *  405854 B de uma peca em 05/10/2026. Por isso tudo passa por um buffer e vai
+ *  ao AM em blocos de 1 MB; so o ultimo (o fim do CIA, multiplo de 64) e menor. */
+#define BLOCO_AM 0x100000
+typedef struct { Handle cia; u64 off; Result erro; uint8_t *buf; uint32_t nbuf; } Destino;
+
+#ifdef LOG_INSTALAR
+/* diagnostico (so no build de teste): tempos da montagem, a cada 1 MB, em PASTA/instalar.log */
+static u64 g_t0, g_t_grav, g_t_ler, g_log_mb;
+static void log_inst(const char *fmt, ...)
+{
+    FILE *f = fopen(PASTA "/instalar.log", "a");
+    if (!f) return;
+    va_list a; va_start(a, fmt); vfprintf(f, fmt, a); va_end(a);
+    fclose(f);
+}
+#define LOG_INST(...) log_inst(__VA_ARGS__)
+#else
+#define LOG_INST(...) ((void)0)
+#endif
+
+static int gravar_am(Destino *d, const uint8_t *p, uint32_t n)
+{
+    u32 escritos = 0;
+#ifdef LOG_INSTALAR
+    u64 t = osGetTime();
+#endif
+    Result r = FSFILE_Write(d->cia, &escritos, d->off, p, n, 0);
+#ifdef LOG_INSTALAR
+    g_t_grav += osGetTime() - t;
+    if ((d->off + n) >> 20 != g_log_mb) {
+        g_log_mb = (d->off + n) >> 20;
+        LOG_INST("%4llu MB  t=%6llu ms  gravar=%6llu ms  ler=%6llu ms\n", g_log_mb,
+                 osGetTime() - g_t0, g_t_grav, g_t_ler);
+    }
+#endif
+    if (R_FAILED(r) || escritos != n) {
+        d->erro = R_FAILED(r) ? r : -1;
+        LOG_INST("FSFILE_Write falhou: r=0x%08lX off=%llu n=%lu escritos=%lu\n", r, d->off, n, escritos);
+        return -1;
+    }
+    d->off += n;
+    return 0;
+}
 
 static int escrever_cia(void *ctx, const uint8_t *p, uint32_t n)
 {
-    Destino *d = ctx; u32 escritos = 0;
-    Result r = FSFILE_Write(d->cia, &escritos, d->off, p, n, 0);
-    if (R_FAILED(r) || escritos != n) return -1;
-    d->off += n;
+    Destino *d = ctx;
+    while (n) {
+        uint32_t k = BLOCO_AM - d->nbuf < n ? BLOCO_AM - d->nbuf : n;
+        memcpy(d->buf + d->nbuf, p, k);
+        d->nbuf += k; p += k; n -= k;
+        if (d->nbuf == BLOCO_AM) { if (gravar_am(d, d->buf, d->nbuf)) return -1; d->nbuf = 0; }
+    }
+    return 0;
+}
+
+/*  As pecas, pelo FS direto (como o FBI le um .cia do SD): o stdio intercalado
+ *  com a gravacao no AM ficava cada vez mais lento e a gravacao falhava no .85
+ *  (Old 3DS) logo na primeira peca (05/10/2026). Mantem a peca aberta entre os
+ *  blocos. */
+typedef struct { Handle h; uint8_t sha[32]; bool aberta; } LeitorPeca;
+
+static int ler_peca_fs(void *ctx, const uint8_t sha[32], uint32_t off, uint8_t *buf, uint32_t n)
+{
+    LeitorPeca *l = ctx;
+#ifdef LOG_INSTALAR
+    u64 t = osGetTime();
+#endif
+    if (!l->aberta || memcmp(l->sha, sha, 32)) {
+        if (l->aberta) { FSFILE_Close(l->h); l->aberta = false; }
+        char cam[160]; peca_caminho("/3ds/mh3u-online/pecas", sha, cam, sizeof cam);
+        Result r = FSUSER_OpenFileDirectly(&l->h, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""),
+                                           fsMakePath(PATH_ASCII, cam), FS_OPEN_READ, 0);
+        if (R_FAILED(r)) { LOG_INST("abrir %s: 0x%08lX\n", cam, r); return -1; }
+        memcpy(l->sha, sha, 32); l->aberta = true;
+    }
+    u32 lidos = 0;
+    Result r = FSFILE_Read(l->h, &lidos, off, buf, n);
+#ifdef LOG_INSTALAR
+    g_t_ler += osGetTime() - t;
+#endif
+    if (R_FAILED(r) || lidos != n) { LOG_INST("ler: r=0x%08lX off=%lu n=%lu lidos=%lu\n", r, off, n, lidos); return -1; }
     return 0;
 }
 
@@ -1007,15 +1103,26 @@ static void instalar(void)
         else op_linha(COR_LUA, T(T_ANTIGO_FICOU), r);
     }
 
-    Destino d = { 0, 0 };
+    Destino d = { 0, 0, 0, malloc(BLOCO_AM), 0 };
+    if (!d.buf) { op_linha(COR_ERRO, "%s", T(T_SEM_MEMORIA)); goto falhou; }
     if (R_FAILED(r = AM_StartCiaInstall(MEDIATYPE_SD, &d.cia))) {
         op_linha(COR_ERRO, "AM_StartCiaInstall: 0x%08lX", r); goto falhou;
     }
-    Pedacos pc = { code, ta, ban, nban, logo, nlogo, ic, nic, PASTA_PECAS };
+    LeitorPeca lp = { 0 };
+    Pedacos pc = { code, ta, ban, nban, logo, nlogo, ic, nic, PASTA_PECAS, ler_peca_fs, &lp };
+#ifdef LOG_INSTALAR
+    g_t0 = osGetTime(); g_t_grav = g_t_ler = g_log_mb = 0;
+    LOG_INST("--- instalar %s\n", rec->versao);
+#endif
     e = receita_montar(rec, &pc, escrever_cia, progresso, &d);
+    if (!e && d.nbuf && gravar_am(&d, d.buf, d.nbuf)) e = -9;    /* o resto (E_ESCRITA) */
+    free(d.buf); d.buf = NULL;
+    if (lp.aberta) FSFILE_Close(lp.h);
+    LOG_INST("montar: %d (%s)\n", e, e ? nucleo_erro(e) : "ok");
     if (e) {
         AM_CancelCIAInstall(d.cia);
         op_linha(COR_ERRO, T(T_CANCELADA), nucleo_erro(e));
+        if (d.erro) op_linha(COR_ERRO, "AM: 0x%08lX (%llu MB)", d.erro, d.off >> 20);
         goto falhou;
     }
     if (R_FAILED(r = AM_FinishCiaInstall(d.cia))) {
@@ -1197,7 +1304,11 @@ int main(void)
         u32 k = hidKeysDown();
         touchPosition toque; hidTouchRead(&toque);
         bool tocou = (k & KEY_TOUCH) != 0;
-        if (k & KEY_START) break;
+        /* START: pergunta antes de sair (de novo no modal = sai); com o app quebrado, sai direto */
+        if (k & KEY_START) {
+            if (!ok || g_modal == MODAL_SAIR) break;
+            if (!g_op.ativa || g_op.fim) { g_op.ativa = false; g_modal = MODAL_SAIR; g_modal_foco = 1; k = 0; }
+        }
 
         if (!ok) {
             C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
@@ -1218,7 +1329,11 @@ int main(void)
             if (k & KEY_A) esc = g_modal_foco;
             if (k & KEY_B) esc = 1;
             if (tocou) for (int b = 0; b < 2; ++b) if (dentro(MODAL_BT[b], toque)) esc = b;
-            if (esc >= 0) { g_modal = MODAL_NADA; if (esc == 0) desinstalar(); }
+            if (esc >= 0) {
+                bool sair = g_modal == MODAL_SAIR;
+                g_modal = MODAL_NADA;
+                if (esc == 0) { if (sair) break; desinstalar(); }
+            }
         } else {
             int acao = ACAO_NADA;
             if (k & KEY_A) acao = ACAO_INSTALAR;

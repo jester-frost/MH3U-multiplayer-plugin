@@ -10,15 +10,23 @@ O multiplayer local do jogo vira online:
   P2P não abre;
 - até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
-> **Versão 1.4.** O online foi testado em Old 3DS, New 3DS e no emulador
-> Azahar, os três juntos na mesma sala e na mesma quest (até a 1.2). O conteúdo
-> novo da 1.3 foi testado no Azahar; nos consoles, ainda não.
+> **Versão 1.5.** O online foi testado em Old 3DS, New 3DS e no emulador
+> Azahar, os três juntos na mesma sala e na mesma quest (até a 1.2). A
+> instalação da 1.5 foi testada no Old 3DS.
 >
-> **Novidades da 1.4 — atualização em peças:** o instalador ficou pequeno
-> (~1,5 MB) e baixa o conteúdo novo em **peças** (um arquivo cada, a maior com
-> ~4 MB), conferidas pela assinatura. Ele só baixa as peças que ainda não estão
-> no cartão: numa versão nova, o que não mudou não é baixado de novo, e uma
-> queda no meio continua de onde parou. O jogo é o mesmo da 1.3.
+> **Novidades da 1.5:**
+> - **A instalação funciona no console.** A 1.3 parava em cerca de 13 MB com
+>   "falha ao gravar o update" (o AM do 3DS só aceita gravações em blocos
+>   alinhados; o emulador aceita qualquer tamanho). Agora o update é gravado em
+>   blocos de 1 MB.
+> - **A quest MGS aparece no console.** O patch não informava a versão ao
+>   servidor de DLC quando o servidor vinha pelo DNS do console.
+> - **Atualização em peças:** o instalador ficou pequeno (cerca de 1,5 MB) e
+>   baixa o conteúdo novo em **peças** (um arquivo cada, a maior com cerca de
+>   4 MB), conferidas pela assinatura. Ele só baixa as peças que ainda não estão
+>   no cartão: numa versão nova, o que não mudou não é baixado de novo, e uma
+>   queda no meio continua de onde parou.
+> - **START** pergunta antes de sair.
 >
 > **Da 1.3 — colaboração Metal Gear do MHP3rd:** as armaduras
 > **Snake** (homem) e **The Boss** (mulher), lâmina e atirador, com o modelo,
@@ -66,8 +74,8 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
-2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.4`, e no FBI o título
-   aparece como `v1.4.0`), se achou o seu MH3U (no SD ou no cartucho) e procura
+2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.5`, e no FBI o título
+   aparece como `v1.5.0`), se achou o seu MH3U (no SD ou no cartucho) e procura
    sozinho uma versão mais nova (aba **Versões**: o que mudou em cada uma).
 3. **Convite:** se o servidor pede convite (o do projeto pede), aperte **X** e
    digite o código que o dono do servidor te passou (ex.: `K7M4-2QXZ`). É uma
