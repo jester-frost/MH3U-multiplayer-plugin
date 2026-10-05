@@ -1,11 +1,13 @@
 /*  nucleo.c -- ver nucleo.h. Sem nada do 3DS: compila no PC (teste/teste_nucleo.c). */
 #include "nucleo.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 enum {
     OK = 0, E_BLZ = -1, E_BPS_MAGIC = -2, E_BPS_TAM = -3, E_BPS_CMD = -4, E_BPS_CRC = -5,
     E_REC_MAGIC = -6, E_REC_CURTA = -7, E_REC_SEG = -8, E_ESCRITA = -9, E_CIA_TAM = -10,
-    E_CIA_SHA = -11,
+    E_CIA_SHA = -11, E_PECA = -12, E_MEM = -13,
 };
 
 const char *nucleo_erro(int e)
@@ -22,6 +24,8 @@ const char *nucleo_erro(int e)
     case E_ESCRITA:   return "falha ao gravar o update";
     case E_CIA_TAM:   return "update montado com tamanho errado";
     case E_CIA_SHA:   return "update montado nao confere (SHA-256)";
+    case E_PECA:      return "peca do conteudo faltando ou cortada";
+    case E_MEM:       return "sem memoria";
     default:          return "erro";
     }
 }
@@ -194,7 +198,8 @@ int receita_ler(const uint8_t *p, uint32_t n, Receita *r)
     uint32_t o = 0;
 #define PRECISA(k) do { if (o + (k) > n) return E_REC_CURTA; } while (0)
     PRECISA(8 + 4 + 16 + 8 + 32 * 6 + 8 + 4);
-    if (memcmp(p, "MH3UREC1", 8) || le32(p + 8) != 1) return E_REC_MAGIC;
+    if (memcmp(p, "MH3UREC1", 8) || (le32(p + 8) != 1 && le32(p + 8) != 2)) return E_REC_MAGIC;
+    r->formato = le32(p + 8);
     o = 12;
     memcpy(r->versao, p + o, 16); r->versao[15] = 0; o += 16;
     r->tam_code_base = le32(p + o); r->tam_code_alvo = le32(p + o + 4); o += 8;
@@ -205,6 +210,12 @@ int receita_ler(const uint8_t *p, uint32_t n, Receita *r)
     memcpy(r->sha_icone, p + o, 32); o += 32;
     memcpy(r->sha_cia, p + o, 32); o += 32;
     r->tam_cia = le32(p + o) | (uint64_t)le32(p + o + 4) << 32; o += 8;
+    r->bps = NULL; r->n_bps = 0;
+    if (r->formato == 2) {
+        PRECISA(4); r->n_bps = le32(p + o); o += 4;
+        PRECISA(r->n_bps); r->bps = p + o; o += r->n_bps;
+    }
+    PRECISA(4);
     r->n_patch_icone = le32(p + o); o += 4;
     r->patch_icone = p + o;
     for (uint32_t i = 0; i < r->n_patch_icone; ++i) {
@@ -215,6 +226,7 @@ int receita_ler(const uint8_t *p, uint32_t n, Receita *r)
     for (uint32_t i = 0; i < r->n_segs; ++i) {
         PRECISA(5); uint8_t t = p[o]; uint32_t l = le32(p + o + 1); o += 5;
         if (t == 'L') { PRECISA(l); o += l; }
+        else if (t == 'P' && r->formato == 2) { PRECISA(32); o += 32; }
         else if (t != 'C' && t != 'B' && t != 'G' && t != 'I') return E_REC_SEG;
     }
     return OK;
@@ -231,6 +243,47 @@ void receita_icone(const Receita *r, uint8_t *icone, uint32_t tam)
     }
 }
 
+uint32_t receita_pecas(const Receita *r, VerPeca ver, void *ctx)
+{
+    uint32_t n = 0;
+    const uint8_t *q = r->segs;
+    for (uint32_t i = 0; i < r->n_segs; ++i) {
+        uint8_t t = q[0]; uint32_t l = le32(q + 1); q += 5;
+        if (t == 'L') q += l;
+        else if (t == 'P') { if (ver) ver(ctx, q, l); q += 32; ++n; }
+    }
+    return n;
+}
+
+void peca_caminho(const char *pasta, const uint8_t sha[32], char *out, size_t cap)
+{
+    char hex[65];
+    for (int i = 0; i < 32; ++i) snprintf(hex + 2 * i, 3, "%02x", sha[i]);
+    snprintf(out, cap, "%s/%s.bin", pasta, hex);
+}
+
+/* uma peca do cartao, em blocos (no SHA do CIA e no escritor) */
+static int montar_peca(const Pedacos *pc, const uint8_t *sha, uint32_t l, Sha256 *s, Escritor esc,
+                       Progresso prog, void *ctx, uint64_t *feito, uint64_t total)
+{
+    char cam[192]; peca_caminho(pc->pasta_pecas ? pc->pasta_pecas : ".", sha, cam, sizeof cam);
+    FILE *f = fopen(cam, "rb");
+    if (!f) return E_PECA;
+    uint8_t *b = malloc(0x40000);
+    if (!b) { fclose(f); return E_MEM; }
+    int e = OK;
+    for (uint32_t k = 0; k < l && !e; ) {
+        uint32_t n = l - k > 0x40000 ? 0x40000 : l - k;
+        if (fread(b, 1, n, f) != n) { e = E_PECA; break; }
+        sha256_add(s, b, n);
+        if (esc(ctx, b, n)) e = E_ESCRITA;
+        k += n; *feito += n;
+        if (prog) prog(ctx, *feito, total);
+    }
+    free(b); fclose(f);
+    return e;
+}
+
 int receita_montar(const Receita *r, const Pedacos *pc, Escritor esc, Progresso prog, void *ctx)
 {
     Sha256 s; sha256_ini(&s);
@@ -239,6 +292,11 @@ int receita_montar(const Receita *r, const Pedacos *pc, Escritor esc, Progresso 
     for (uint32_t i = 0; i < r->n_segs; ++i) {
         uint8_t t = q[0]; uint32_t l = le32(q + 1); q += 5;
         const uint8_t *d = NULL;
+        if (t == 'P') {
+            int e = montar_peca(pc, q, l, &s, esc, prog, ctx, &feito, r->tam_cia);
+            if (e) return e;
+            q += 32; continue;
+        }
         if (t == 'L') { d = q; q += l; }
         else if (t == 'C' && l == pc->tam_code)   d = pc->code;
         else if (t == 'B' && l == pc->tam_banner) d = pc->banner;

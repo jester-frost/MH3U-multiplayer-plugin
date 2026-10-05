@@ -10,11 +10,17 @@ O multiplayer local do jogo vira online:
   P2P não abre;
 - até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
-> **Versão 1.3.** O online foi testado em Old 3DS, New 3DS e no emulador
+> **Versão 1.4.** O online foi testado em Old 3DS, New 3DS e no emulador
 > Azahar, os três juntos na mesma sala e na mesma quest (até a 1.2). O conteúdo
 > novo da 1.3 foi testado no Azahar; nos consoles, ainda não.
 >
-> **Novidades da 1.3 — colaboração Metal Gear do MHP3rd:** as armaduras
+> **Novidades da 1.4 — atualização em peças:** o instalador ficou pequeno
+> (~1,5 MB) e baixa o conteúdo novo em **peças** (um arquivo cada, a maior com
+> ~4 MB), conferidas pela assinatura. Ele só baixa as peças que ainda não estão
+> no cartão: numa versão nova, o que não mudou não é baixado de novo, e uma
+> queda no meio continua de onde parou. O jogo é o mesmo da 1.3.
+>
+> **Da 1.3 — colaboração Metal Gear do MHP3rd:** as armaduras
 > **Snake** (homem) e **The Boss** (mulher), lâmina e atirador, com o modelo,
 > a textura e a cabeça do P3rd; o item **Big Boss Title**; a quest de evento
 > **MGS - Hunter Eater Mission** (Nibelsnarf, no menu de DLC) que dá o título; e
@@ -60,14 +66,15 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
-2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.3`, e no FBI o título
-   aparece como `v1.3.0`), se achou o seu MH3U (no SD ou no cartucho) e procura
+2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.4`, e no FBI o título
+   aparece como `v1.4.0`), se achou o seu MH3U (no SD ou no cartucho) e procura
    sozinho uma versão mais nova (aba **Versões**: o que mudou em cada uma).
 3. **Convite:** se o servidor pede convite (o do projeto pede), aperte **X** e
    digite o código que o dono do servidor te passou (ex.: `K7M4-2QXZ`). É uma
    vez só: fica gravado no cartão. Veja [Convite](#convite).
 4. Aperte **A**. O app lê o jogo **do seu console**, confere que é a versão
-   certa, aplica o patch e instala o **update** (~44 MB, com o conteúdo novo). A tela mostra cada
+   certa, aplica o patch e instala o **update** (~44 MB, com o conteúdo novo). Na primeira vez
+   ele baixa o conteúdo (~30 MB, em peças; precisa de internet). A tela mostra cada
    passo e a porcentagem; no fim aparece **CONCLUIDO**. Não desligue no meio.
 5. Abra o MH3U → **Ferry → Multiplayer**.
 
@@ -181,8 +188,11 @@ servidor (automático) e fica com um pouco mais de latência.
 - O **instalador** não traz nada da Capcom: ele lê o executável, o ícone e o
   banner do **MH3U do próprio console**, confere os hashes (só aceita a versão
   certa), aplica o `code.bps` (~126 KB, só as nossas mudanças) e monta o update
-  seguindo uma *receita* (`romfs/receita.bin`). O resultado é conferido por
-  SHA-256 antes de instalar. Código-fonte em `instalador/fonte/`.
+  seguindo uma *receita* (`romfs/receita2.bin`). O conteúdo novo (os nossos
+  modelos, textos e sons) vem em peças (`pecas/<sha256>.bin`), cada uma
+  conferida pelo SHA-256 da receita assinada e guardada em
+  `sd:/3ds/mh3u-online/pecas/`. O resultado é conferido por SHA-256 antes de
+  instalar. Código-fonte em `instalador/fonte/`.
 - O **patch nativo** e o **plugin** são só as nossas mudanças / o nosso código.
 
 ## Como funciona (resumo técnico)

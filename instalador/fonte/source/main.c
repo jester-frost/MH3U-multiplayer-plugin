@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include "nucleo.h"
 #include "atualiza.h"
 #include "rede.h"
@@ -46,6 +47,7 @@
 #define TID_BASE    0x00040000000AE400ULL
 #define TID_UPDATE  0x0004000E000AE400ULL
 #define PASTA       "sdmc:/3ds/mh3u-online"
+#define PASTA_PECAS PASTA "/pecas"     /* o conteudo da receita formato 2, peca a peca */
 
 #define LARG_TOPO 400
 #define LARG_BASE 320
@@ -74,13 +76,21 @@ static void cores(void)
 }
 
 /* ---------------------------------------------------------------- estado */
-/* o patch que o A instala: o embutido (romfs) ou o baixado (PASTA) */
+/* o patch que o A instala: o embutido (romfs) ou o baixado (PASTA).
+ * Formato 1: receita.bin + mh3u.bps. Formato 2 (1.4+): receita2.bin, com o bps
+ * dentro e o conteudo em pecas (PASTA_PECAS). */
 typedef struct {
     Receita  rec;
     uint8_t *brec, *bps;
     uint32_t nrec, nbps;
     bool     baixado;
 } Pacote;
+
+static const uint8_t *pac_bps(const Pacote *p, uint32_t *n)
+{
+    if (p->rec.formato == 2) { *n = p->rec.n_bps; return p->rec.bps; }
+    *n = p->nbps; return p->bps;
+}
 
 static Pacote    g_pac;
 static Manifesto g_man;            /* o manifesto mais novo que conhecemos (assinado) */
@@ -648,6 +658,10 @@ static void pacote_livre(Pacote *p) { free(p->brec); free(p->bps); memset(p, 0, 
 static bool pacote_embutido(Pacote *p)
 {
     memset(p, 0, sizeof *p);
+    if ((p->brec = ler_arquivo("romfs:/receita2.bin", &p->nrec))) {
+        if (receita_ler(p->brec, p->nrec, &p->rec) || p->rec.formato != 2) { pacote_livre(p); return false; }
+        return true;
+    }
     p->brec = ler_arquivo("romfs:/receita.bin", &p->nrec);
     p->bps = ler_arquivo("romfs:/mh3u.bps", &p->nbps);
     if (!p->brec || !p->bps || receita_ler(p->brec, p->nrec, &p->rec)) { pacote_livre(p); return false; }
@@ -687,10 +701,18 @@ static void carregar_cache(void)
     free(txt); free(sig);
     if (!ok || versao_numero(m.versao) <= versao_numero(g_pac.rec.versao)) return;
     Pacote p; memset(&p, 0, sizeof p);
-    p.brec = ler_arquivo(PASTA "/receita.bin", &p.nrec);
-    p.bps = ler_arquivo(PASTA "/mh3u.bps", &p.nbps);
-    if (p.brec && p.bps && sha_ok(p.brec, p.nrec, manifesto_arquivo(&m, "receita.bin")) &&
-        sha_ok(p.bps, p.nbps, manifesto_arquivo(&m, "mh3u.bps")) && !receita_ler(p.brec, p.nrec, &p.rec)) {
+    const AtuArquivo *a2 = manifesto_arquivo(&m, "receita2.bin");
+    bool valido;
+    if (a2) {
+        p.brec = ler_arquivo(PASTA "/receita2.bin", &p.nrec);
+        valido = p.brec && sha_ok(p.brec, p.nrec, a2) && !receita_ler(p.brec, p.nrec, &p.rec) && p.rec.formato == 2;
+    } else {
+        p.brec = ler_arquivo(PASTA "/receita.bin", &p.nrec);
+        p.bps = ler_arquivo(PASTA "/mh3u.bps", &p.nbps);
+        valido = p.brec && p.bps && sha_ok(p.brec, p.nrec, manifesto_arquivo(&m, "receita.bin")) &&
+                 sha_ok(p.bps, p.nbps, manifesto_arquivo(&m, "mh3u.bps")) && !receita_ler(p.brec, p.nrec, &p.rec);
+    }
+    if (valido) {
         p.baixado = true;
         pacote_livre(&g_pac); g_pac = p;
         if (!g_tem_man || versao_numero(m.versao) > versao_numero(g_man.versao)) { g_man = m; g_tem_man = true; }
@@ -752,6 +774,83 @@ static bool instalar_app(const uint8_t *cia, uint32_t n)
     return R_SUCCEEDED(AM_FinishCiaInstall(h));
 }
 
+/* ---- fila de pecas (receita formato 2): baixa so o que nao esta no cartao ---- */
+typedef struct { const uint8_t **sha; uint32_t *tam; uint32_t n; uint64_t bytes; } Fila;
+
+static bool peca_no_cartao(const uint8_t *sha, uint32_t tam)
+{
+    char cam[160]; struct stat st;
+    peca_caminho(PASTA_PECAS, sha, cam, sizeof cam);
+    return stat(cam, &st) == 0 && (uint64_t)st.st_size == tam;
+}
+
+static void fila_ver(void *ctx, const uint8_t sha[32], uint32_t tam)
+{
+    Fila *f = ctx;
+    for (uint32_t i = 0; i < f->n; ++i) if (!memcmp(f->sha[i], sha, 32)) return;
+    if (peca_no_cartao(sha, tam)) return;
+    f->sha[f->n] = sha; f->tam[f->n] = tam; f->n++; f->bytes += tam;
+}
+
+/*  Cada peca vem de v<versao da receita>/pecas/<sha>.bin no repositorio (as
+ *  pecas antigas continuam nas tags novas) e e conferida pelo SHA da receita,
+ *  que por sua vez veio assinada. Uma por vez: o que ja chegou fica no cartao,
+ *  e a proxima tentativa continua de onde parou. */
+static bool baixar_pecas(const Receita *rec)
+{
+    uint32_t total = receita_pecas(rec, NULL, NULL);
+    if (!total) return true;
+    Fila f = { malloc(total * sizeof(uint8_t *)), malloc(total * sizeof(uint32_t)), 0, 0 };
+    if (!f.sha || !f.tam) { free(f.sha); free(f.tam); return false; }
+    receita_pecas(rec, fila_ver, &f);
+    bool ok = true;
+    if (f.n) {
+        op_linha(COR_ACO, T(T_PECAS_FILA), (unsigned long)f.n, (unsigned long)((f.bytes + 1023) / 1024));
+        mkdir("sdmc:/3ds", 0777); mkdir(PASTA, 0777); mkdir(PASTA_PECAS, 0777);
+        char ref[32]; snprintf(ref, sizeof ref, "v%s/pecas", rec->versao);
+        for (uint32_t i = 0; i < f.n && ok; ++i) {
+            char rot[32], cam[160]; uint8_t *b = NULL, h[32]; uint32_t n = 0;
+            snprintf(rot, sizeof rot, T(T_PECA), (unsigned long)i + 1, (unsigned long)f.n);
+            peca_caminho(ref, f.sha[i], cam, sizeof cam);
+            int e = rede_baixar(cam, f.tam[i], &b, &n, prog_rede, rot);
+            if (e) { op_linha(COR_ERRO, "%s: %s", rot, rede_erro(e)); ok = false; break; }
+            sha256(b, n, h);
+            if (n != f.tam[i] || memcmp(h, f.sha[i], 32)) { op_linha(COR_ERRO, T(T_DIFERENTE_ASSINADO), rot); ok = false; }
+            else {
+                peca_caminho(PASTA_PECAS, f.sha[i], cam, sizeof cam);
+                if (!gravar_arquivo(cam, b, n)) { op_linha(COR_ERRO, "%s", T(T_NAO_GRAVEI)); ok = false; }
+            }
+            free(b);
+        }
+    }
+    if (ok) op_linha(COR_VERDE, T(T_PECAS_OK), (unsigned long)total);
+    free(f.sha); free(f.tam);
+    return ok;
+}
+
+static void ver_nome(void *ctx, const uint8_t sha[32], uint32_t tam)
+{
+    (void)tam;
+    char cam[160]; peca_caminho(PASTA_PECAS, sha, cam, sizeof cam);
+    if (!strcmp(cam + sizeof(PASTA_PECAS), (const char *)ctx)) ((char *)ctx)[0] = 0;   /* em uso */
+}
+
+/* depois de instalar: tira do cartao as pecas que a receita instalada nao usa */
+static void limpar_pecas(const Receita *rec)
+{
+    DIR *d = opendir(PASTA_PECAS);
+    if (!d) return;
+    struct dirent *de;
+    char nome[96], cam[160];
+    while ((de = readdir(d))) {
+        if (de->d_name[0] == '.') continue;
+        snprintf(nome, sizeof nome, "%s", de->d_name);
+        receita_pecas(rec, ver_nome, nome);
+        if (nome[0]) { snprintf(cam, sizeof cam, PASTA_PECAS "/%s", de->d_name); remove(cam); }
+    }
+    closedir(d);
+}
+
 static void baixar_atualizacao(void)
 {
     Manifesto m = g_man;
@@ -761,26 +860,38 @@ static void baixar_atualizacao(void)
     op_linha(COR_ACO, "%s", T(T_TUDO_CONFERIDO));
 
     uint8_t *rec = NULL, *bps = NULL, *cia = NULL;
-    const AtuArquivo *arec = manifesto_arquivo(&m, "receita.bin"), *abps = manifesto_arquivo(&m, "mh3u.bps");
-    bool ok = arec && abps && !baixar_conferindo(arec, T(T_RECEITA), &rec) && !baixar_conferindo(abps, T(T_PATCH), &bps);
+    /*  receita2.bin (formato 2, com o bps dentro) e o que este app usa; os
+     *  receita.bin/mh3u.bps do manifesto ficam para os apps ate a 1.3, que so
+     *  entendem o formato 1 (e com eles chegam ao app novo). */
+    const AtuArquivo *a2 = manifesto_arquivo(&m, "receita2.bin");
+    const AtuArquivo *arec = a2 ? a2 : manifesto_arquivo(&m, "receita.bin");
+    const AtuArquivo *abps = a2 ? NULL : manifesto_arquivo(&m, "mh3u.bps");
+    bool ok = arec && (a2 || abps) && !baixar_conferindo(arec, T(T_RECEITA), &rec) &&
+              (a2 || !baixar_conferindo(abps, T(T_PATCH), &bps));
     Pacote p; memset(&p, 0, sizeof p);
     if (ok) {
-        p.brec = rec; p.nrec = arec->tam; p.bps = bps; p.nbps = abps->tam; p.baixado = true;
+        p.brec = rec; p.nrec = arec->tam; p.bps = bps; p.nbps = abps ? abps->tam : 0; p.baixado = true;
         rec = bps = NULL;
-        if (receita_ler(p.brec, p.nrec, &p.rec)) { op_linha(COR_ERRO, "%s", T(T_RECEITA_INVALIDA)); ok = false; }
+        if (receita_ler(p.brec, p.nrec, &p.rec) || (a2 && p.rec.formato != 2)) {
+            op_linha(COR_ERRO, "%s", T(T_RECEITA_INVALIDA)); ok = false;
+        }
     }
     if (ok) {
         /* guarda no cartao: o pacote vale tambem nas proximas vezes, sem internet */
         op_etapa(T(T_GRAVANDO_SD), 0, 0);
         uint32_t nt = 0, ns = 0;
         uint8_t *txt = ler_arquivo(PASTA "/versao.txt", &nt), *sig = ler_arquivo(PASTA "/versao.sig", &ns);
-        bool gravou = txt && sig && gravar_arquivo(PASTA "/receita.bin", p.brec, p.nrec) &&
-                      gravar_arquivo(PASTA "/mh3u.bps", p.bps, p.nbps) &&
+        bool gravou = txt && sig &&
+                      (a2 ? gravar_arquivo(PASTA "/receita2.bin", p.brec, p.nrec)
+                          : gravar_arquivo(PASTA "/receita.bin", p.brec, p.nrec) &&
+                            gravar_arquivo(PASTA "/mh3u.bps", p.bps, p.nbps)) &&
                       gravar_arquivo(PASTA "/pacote.txt", txt, nt) && gravar_arquivo(PASTA "/pacote.sig", sig, ns);
         free(txt); free(sig);
         if (gravou) op_linha(COR_VERDE, "%s", T(T_GUARDADO));
         else op_linha(COR_LUA, "%s", T(T_NAO_GRAVEI));
         pacote_livre(&g_pac); g_pac = p; memset(&p, 0, sizeof p);
+        /* o conteudo ja vem agora; o que faltar, o A busca antes de instalar */
+        if (g_pac.rec.formato == 2 && !baixar_pecas(&g_pac.rec)) op_linha(COR_LUA, "%s", T(T_PECAS_FALTAM));
     }
     pacote_livre(&p); free(rec); free(bps);
 
@@ -875,12 +986,16 @@ static void instalar(void)
     }
 
     op_etapa(T(T_APLICANDO), 4, 6);
-    uint32_t ta = 0;
-    if ((e = bps_aplicar_no_lugar(g_pac.bps, g_pac.nbps, code, td, rec->tam_code_alvo, &ta))) {
+    uint32_t ta = 0, nbps = 0;
+    const uint8_t *bps = pac_bps(&g_pac, &nbps);
+    if ((e = bps_aplicar_no_lugar(bps, nbps, code, td, rec->tam_code_alvo, &ta))) {
         op_linha(COR_ERRO, "%s", nucleo_erro(e)); goto falhou;
     }
     if (!conferir(T(T_COD_PATCH), "codigo_com_o_patch", code, ta, rec->sha_code_alvo)) goto falhou;
     receita_icone(rec, ic, nic);
+
+    /* o conteudo (formato 2): tudo no cartao antes de mexer no update antigo */
+    if (rec->formato == 2 && !baixar_pecas(rec)) { op_linha(COR_ERRO, "%s", T(T_PECAS_FALTAM)); goto falhou; }
 
     /*  Atualizar = tirar o update antigo e instalar o novo. Gravar por cima
      *  deixa o AM decidir pela versao do titulo (e ele recusa igual ou menor);
@@ -896,7 +1011,7 @@ static void instalar(void)
     if (R_FAILED(r = AM_StartCiaInstall(MEDIATYPE_SD, &d.cia))) {
         op_linha(COR_ERRO, "AM_StartCiaInstall: 0x%08lX", r); goto falhou;
     }
-    Pedacos pc = { code, ta, ban, nban, logo, nlogo, ic, nic };
+    Pedacos pc = { code, ta, ban, nban, logo, nlogo, ic, nic, PASTA_PECAS };
     e = receita_montar(rec, &pc, escrever_cia, progresso, &d);
     if (e) {
         AM_CancelCIAInstall(d.cia);
@@ -907,6 +1022,7 @@ static void instalar(void)
         op_linha(COR_ERRO, "AM_FinishCiaInstall: 0x%08lX", r); goto falhou;
     }
     free(ban); free(ic); free(code);
+    if (rec->formato == 2) limpar_pecas(rec);
     op_linha(COR_VERDE, T(T_INSTALADO), rec->versao);
     int n = desligar_luma();
     if (n) op_linha(COR_ACO, T(T_LUMA_OFF), n);

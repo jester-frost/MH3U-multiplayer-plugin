@@ -102,6 +102,10 @@ enum { IDIOMA_PT = 0, IDIOMA_EN, IDIOMA_ES, N_IDIOMAS };
     X(T_APP_NOVO, "App novo", "New app", "App nueva") \
     X(T_RECEITA_INVALIDA, "Receita inválida.", "Invalid recipe.", "Receta inválida.") \
     X(T_GRAVANDO_SD, "gravando no cartão SD", "saving to the SD card", "guardando en la tarjeta SD") \
+    X(T_PECA, "Peça %lu/%lu", "Part %lu/%lu", "Pieza %lu/%lu") \
+    X(T_PECAS_FILA, "Conteúdo: %lu peças a baixar (%lu KB)", "Content: %lu parts to download (%lu KB)", "Contenido: %lu piezas a descargar (%lu KB)") \
+    X(T_PECAS_OK, "Conteúdo completo no cartão (%lu peças).", "Content complete on the SD card (%lu parts).", "Contenido completo en la SD (%lu piezas).") \
+    X(T_PECAS_FALTAM, "Falta conteúdo: conecte à internet e tente de novo.", "Content missing: connect to the internet and try again.", "Falta contenido: conéctate a internet e inténtalo de nuevo.") \
     X(T_GUARDADO, "Guardado no cartão SD.", "Saved to the SD card.", "Guardado en la tarjeta SD.") \
     X(T_NAO_GRAVEI, "Não gravei no SD: vale só até fechar o app.", "Not saved to SD: only until the app closes.", "No se guardó en la SD: vale hasta cerrar la app.") \
     X(T_APP_ATUALIZADO, "App atualizado para %s.", "App updated to %s.", "App actualizada a %s.") \

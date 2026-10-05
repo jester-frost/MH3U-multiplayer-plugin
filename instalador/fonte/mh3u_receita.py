@@ -14,22 +14,35 @@ receita descreve o CIA byte a byte com
 e o app, no console do jogador, le esses quatro arquivos do MH3U DELE, confere
 os hashes, monta o CIA seguindo a receita, confere o SHA-256 final e instala.
 
+    P  uma PECA do conteudo novo (1.4+): um arquivo do romfs do update,
+       guardado a parte e nomeado pelo proprio SHA-256 (pecas/<sha>.bin)
+
     mh3u_receita.py [--cia ~/mh3u-nc/cia/MH3U-online-<v>-pub-update-pequeno.cia]
-                    [--saida instalador/romfs]
+                    [--conteudo ~/mh3u-quests/saida/conteudo_patch]
+                    [--saida instalador/romfs] [--pecas instalador/pecas]
 
-Gera: receita.bin, mh3u.bps (copia do patch pub). Confere reconstruindo o CIA a
-partir da receita + os arquivos do jogo original (~/mh3u-nc/cia/exefsdir).
+Gera: receita2.bin (com o mh3u.bps dentro) e as pecas. Confere reconstruindo o
+CIA a partir da receita + pecas + os arquivos do jogo original
+(~/mh3u-nc/cia/exefsdir).
 
-Formato de receita.bin (little-endian):
+AS PECAS (fila de atualizacao): cada arquivo do conteudo com 64 KB ou mais sai
+da receita e vira uma peca (o update tem o NCCH sem cifra -- NoCrypto --, o
+arquivo esta la byte a byte). O instalador baixa so as pecas que ainda nao tem
+no cartao (sdmc:/3ds/mh3u-online/pecas/): numa versao nova, o que nao mudou tem
+o mesmo SHA e nao e baixado de novo. Cada peca fica bem abaixo dos 20 MB do
+jsDelivr (o espelho).
+
+Formato de receita2.bin (little-endian):
     "MH3UREC1"
-    u32 versao_do_formato (1)
+    u32 versao_do_formato (2; a 1 nao tinha o bps nem pecas)
     char versao_patch[16]
     u32 tam_code_base_descomprimido, u32 tam_code_alvo
     u8  sha_code_base[32], sha_code_alvo[32]
     u8  sha_banner[32], sha_logo[32], sha_icone_base[32]
     u8  sha_cia[32]; u64 tam_cia
+    u32 tam_bps; bytes do mh3u.bps
     u32 n_patch_icone; n x { u32 off, u16 len, bytes }
-    u32 n_segmentos;   n x { u8 tipo, u32 len, [bytes se tipo == 'L'] }
+    u32 n_segmentos;   n x { u8 tipo, u32 len, [bytes se 'L'] [sha256 se 'P'] }
 """
 import argparse, hashlib, os, struct, sys
 
@@ -63,7 +76,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cia", default=None)
     ap.add_argument("--bps", default=os.path.join(RAIZ, "plugin", "nativo", "saida-pub", "code.bps"))
+    ap.add_argument("--conteudo", default=os.path.expanduser("~/mh3u-quests/saida/conteudo_patch"))
     ap.add_argument("--saida", default=os.path.join(RAIZ, "instalador", "romfs"))
+    ap.add_argument("--pecas", default=os.path.join(RAIZ, "instalador", "pecas"))
     a = ap.parse_args()
     ver = N.versao()
     cia_p = a.cia or os.path.join(CIA_DIR, f"MH3U-online-{ver}-pub-update-pequeno.cia")
@@ -106,38 +121,61 @@ def main():
         k = cia.find(icone, o_meta)
         assert k >= 0, "icone nao achado na meta"
         marcas.append((k, len(icone), b"I"))
+    # as pecas: os arquivos do conteudo, achados byte a byte no romfs do update
+    o_romfs = o_c + struct.unpack_from("<I", cia, o_c + 0x1B0)[0] * 0x200
+    assert cia[o_c + 0x18F] & 4, "o NCCH do update tem de ser sem cifra (NoCrypto)"
+    pecas = {}
+    for raiz, _, nomes in os.walk(a.conteudo):
+        for nome in sorted(nomes):
+            b = open(os.path.join(raiz, nome), "rb").read()
+            if len(b) < 0x10000: continue
+            k = cia.find(b, o_romfs)
+            assert k >= 0, f"{nome} nao achado no romfs do update"
+            marcas.append((k, len(b), b"P", sha(b))); pecas[sha(b)] = b
+    marcas = [m if len(m) == 4 else m + (None,) for m in marcas]
     marcas.sort()
     segs, pos = [], 0
-    for ini, tam, tipo in marcas:
+    for ini, tam, tipo, h in marcas:
+        assert ini >= pos, "marcas sobrepostas"
         if ini > pos: segs.append((b"L", cia[pos:ini]))
-        segs.append((tipo, tam)); pos = ini + tam
+        segs.append((tipo, tam, h)); pos = ini + tam
     if pos < len(cia): segs.append((b"L", cia[pos:]))
 
     # confere: reconstroi a partir da receita + arquivos do jogo
     icone_nosso = bytearray(icone_base)
     for off, b in patch_icone: icone_nosso[off:off + len(b)] = b
     pedaco = {b"C": alvo_code, b"B": banner, b"G": logo, b"I": bytes(icone_nosso)}
-    rec = b"".join(s[1] if s[0] == b"L" else pedaco[s[0]] for s in segs)
+    rec = b"".join(s[1] if s[0] == b"L" else pecas[s[2]] if s[0] == b"P" else pedaco[s[0]] for s in segs)
     assert rec == cia, "a receita nao reconstroi o CIA"
 
-    out = bytearray(b"MH3UREC1") + struct.pack("<I", 1) + ver.encode()[:15].ljust(16, b"\0")
+    out = bytearray(b"MH3UREC1") + struct.pack("<I", 2) + ver.encode()[:15].ljust(16, b"\0")
     out += struct.pack("<II", len(base_code), len(alvo_code))
     out += sha(base_code) + sha(alvo_code) + sha(banner) + sha(logo) + sha(icone_base)
     out += sha(cia) + struct.pack("<Q", len(cia))
+    out += struct.pack("<I", len(bps)) + bps
     out += struct.pack("<I", len(patch_icone))
     for off, b in patch_icone: out += struct.pack("<IH", off, len(b)) + b
     out += struct.pack("<I", len(segs))
     lit = 0
-    for tipo, x in segs:
+    for sg in segs:
+        tipo, x = sg[0], sg[1]
         if tipo == b"L":
             out += tipo + struct.pack("<I", len(x)) + x; lit += len(x)
+        elif tipo == b"P":
+            out += tipo + struct.pack("<I", x) + sg[2]
         else:
             out += tipo + struct.pack("<I", x)
     os.makedirs(a.saida, exist_ok=True)
-    open(os.path.join(a.saida, "receita.bin"), "wb").write(out)
-    open(os.path.join(a.saida, "mh3u.bps"), "wb").write(bps)
-    print(f"receita.bin: {len(out)} B ({len(segs)} segmentos, {lit} B literais, "
-          f"{len(patch_icone)} trechos no icone); mh3u.bps: {len(bps)} B")
+    for velho in ("receita.bin", "mh3u.bps"):          # formato 1 (ate a 1.3)
+        if os.path.exists(os.path.join(a.saida, velho)): os.remove(os.path.join(a.saida, velho))
+    open(os.path.join(a.saida, "receita2.bin"), "wb").write(out)
+    os.makedirs(a.pecas, exist_ok=True)
+    for h, b in pecas.items():
+        open(os.path.join(a.pecas, h.hex() + ".bin"), "wb").write(b)
+    print(f"receita2.bin: {len(out)} B ({len(segs)} segmentos, {lit} B literais, "
+          f"{len(patch_icone)} trechos no icone, bps {len(bps)} B)")
+    print(f"pecas: {len(pecas)} em {a.pecas}, {sum(map(len, pecas.values()))} B "
+          f"(maior {max(map(len, pecas.values()), default=0)} B)")
     print(f"reconstrucao == CIA ({len(cia)} B, sha {sha(cia).hex()[:16]})")
 
 

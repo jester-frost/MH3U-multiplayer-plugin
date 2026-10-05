@@ -3,6 +3,8 @@
  *
  *  gcc -O2 -I../source ../source/nucleo.c teste_nucleo.c -o teste_nucleo
  *  ./teste_nucleo <receita.bin> <mh3u.bps> <code_comprimido> <banner> <logo> <icone> <saida.cia>
+ *  ./teste_nucleo <receita2.bin> - <code_comprimido> <banner> <logo> <icone> <saida.cia> <pasta_pecas>
+ *  (formato 2: o bps vem dentro da receita e o conteudo, das pecas)
  */
 #include "nucleo.h"
 #include <stdio.h>
@@ -25,18 +27,23 @@ static void confere(const char *nome, const uint8_t *p, uint32_t n, const uint8_
 
 int main(int argc, char **argv)
 {
-    if (argc != 8) { fprintf(stderr, "uso: ver o comentario\n"); return 2; }
+    if (argc != 8 && argc != 9) { fprintf(stderr, "uso: ver o comentario\n"); return 2; }
     uint32_t nr, nb, nc, nban, nlogo, nic; Receita r;
-    uint8_t *rec = ler(argv[1], &nr), *bps = ler(argv[2], &nb), *comp = ler(argv[3], &nc);
+    uint8_t *rec = ler(argv[1], &nr), *bps = strcmp(argv[2], "-") ? ler(argv[2], &nb) : NULL, *comp = ler(argv[3], &nc);
     uint8_t *ban = ler(argv[4], &nban), *logo = ler(argv[5], &nlogo), *ic = ler(argv[6], &nic);
     int e = receita_ler(rec, nr, &r);
     if (e) { printf("receita: %s\n", nucleo_erro(e)); return 1; }
-    printf("receita %s: code %u -> %u, cia %llu B\n", r.versao, r.tam_code_base, r.tam_code_alvo, (unsigned long long)r.tam_cia);
+    if (r.formato == 2) { bps = (uint8_t *)r.bps; nb = r.n_bps; }
+    if (!bps) { printf("sem bps\n"); return 1; }
+    printf("receita %s (formato %u, %u pecas): code %u -> %u, cia %llu B\n", r.versao, r.formato, receita_pecas(&r, NULL, NULL),
+           r.tam_code_base, r.tam_code_alvo, (unsigned long long)r.tam_cia);
 
-    uint32_t td = blz_tamanho(comp, nc);
+    /* aceita tambem o .code ja descomprimido (o do ponto zero) */
+    uint32_t td = nc == r.tam_code_base ? nc : blz_tamanho(comp, nc);
     if (td != r.tam_code_base) { printf("tamanho descomprimido %u != %u\n", td, r.tam_code_base); return 1; }
     uint8_t *code = malloc(r.tam_code_alvo > td ? r.tam_code_alvo : td);
-    e = blz_descomprimir(comp, nc, code, td); if (e) { printf("%s\n", nucleo_erro(e)); return 1; }
+    if (nc == td) { memcpy(code, comp, td); e = 0; } else e = blz_descomprimir(comp, nc, code, td);
+    if (e) { printf("%s\n", nucleo_erro(e)); return 1; }
     confere("code base", code, td, r.sha_code_base);
     uint32_t ta; e = bps_aplicar_no_lugar(bps, nb, code, td, r.tam_code_alvo, &ta);
     if (e) { printf("bps: %s\n", nucleo_erro(e)); return 1; }
@@ -46,7 +53,7 @@ int main(int argc, char **argv)
     confere("icone base", ic, nic, r.sha_icone);
     receita_icone(&r, ic, nic);
 
-    Pedacos pc = { code, ta, ban, nban, logo, nlogo, ic, nic };
+    Pedacos pc = { code, ta, ban, nban, logo, nlogo, ic, nic, argc == 9 ? argv[8] : NULL };
     FILE *s = fopen(argv[7], "wb");
     e = receita_montar(&r, &pc, esc, NULL, s); fclose(s);
     printf("montar: %s\n", e ? nucleo_erro(e) : "ok (SHA-256 do update.cia confere)");
