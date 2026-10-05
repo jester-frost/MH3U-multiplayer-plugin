@@ -170,6 +170,8 @@ def main():
         if os.path.exists(os.path.join(a.saida, velho)): os.remove(os.path.join(a.saida, velho))
     open(os.path.join(a.saida, "receita2.bin"), "wb").write(out)
     os.makedirs(a.pecas, exist_ok=True)
+    for velho in os.listdir(a.pecas):                  # so as pecas desta receita
+        if velho.endswith(".bin"): os.remove(os.path.join(a.pecas, velho))
     for h, b in pecas.items():
         open(os.path.join(a.pecas, h.hex() + ".bin"), "wb").write(b)
     print(f"receita2.bin: {len(out)} B ({len(segs)} segmentos, {lit} B literais, "
