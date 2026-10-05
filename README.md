@@ -10,11 +10,14 @@ O multiplayer local do jogo vira online:
   P2P não abre;
 - até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
-> **Versão 1.6.** O online foi testado em Old 3DS, New 3DS e no emulador
+> **Versão 1.7.** O online foi testado em Old 3DS, New 3DS e no emulador
 > Azahar, os três juntos na mesma sala e na mesma quest (até a 1.2). A
-> instalação foi testada no Old 3DS (1.5); o visual novo da 1.6, no Azahar.
+> instalação foi testada no Old 3DS (1.5); o visual novo, no Azahar.
 >
-> **Novidades da 1.6 — armaduras Snake e The Boss revistas:**
+> **Novidades da 1.7:** o Snake e a The Boss voltaram a ter **sombra** (o
+> conversor trocava a silhueta de sombra do corpo pela pele do pescoço).
+>
+> **Da 1.6 — armaduras Snake e The Boss revistas:**
 > - **Sem buracos:** as laterais e as costas fecharam (o conversor lia mal parte
 >   da malha do P3rd) e a textura não pega mais a borda errada.
 > - **Cor da armadura:** as áreas tingíveis do P3rd agora são as do 3U — mudam
@@ -85,8 +88,8 @@ servidor, secundário `0.0.0.0`). Outras regiões ainda não.
 
 1. Copie `instalador/mh3u-online-instalador.cia` para o cartão SD e instale pelo
    **FBI**. Aparece o ícone **MH3U Online** no HOME menu.
-2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.6`, e no FBI o título
-   aparece como `v1.6.0`), se achou o seu MH3U (no SD ou no cartucho) e procura
+2. Abra o **MH3U Online**. Ele mostra a versão (ex.: `1.7`, e no FBI o título
+   aparece como `v1.7.0`), se achou o seu MH3U (no SD ou no cartucho) e procura
    sozinho uma versão mais nova (aba **Versões**: o que mudou em cada uma).
 3. **Convite:** se o servidor pede convite (o do projeto pede), aperte **X** e
    digite o código que o dono do servidor te passou (ex.: `K7M4-2QXZ`). É uma
