@@ -781,17 +781,36 @@ static int baixar_conferindo(const AtuArquivo *a, const char *rotulo, uint8_t **
 }
 
 /* o proprio instalador, pelo AM (como o FBI se atualiza) */
+/*  O app instala A SI MESMO enquanto roda (05/10/2026): no console, o
+ *  AM_FinishCiaInstall (que faz o commit na hora) falhava -- os apps 1.4 baixaram
+ *  as versoes 1.5..1.7 e ficaram 1.4 ("Nao consegui atualizar o app"); o Azahar
+ *  aceitava. Como os apps que se atualizam sozinhos: termina SEM commit e faz o
+ *  commit do proprio titulo (vale ao fechar o app). Na falha, o passo e o codigo
+ *  do AM vao para a tela. */
+static int g_app_passo;
+static Result g_app_erro;
+
 static bool instalar_app(const uint8_t *cia, uint32_t n)
 {
-    Handle h;
-    if (R_FAILED(AM_StartCiaInstall(MEDIATYPE_SD, &h))) return false;
+    Handle h; Result r; u64 tid = 0;
+    g_app_passo = 1; g_app_erro = 0;
+    if (R_FAILED(r = AM_StartCiaInstall(MEDIATYPE_SD, &h))) { g_app_erro = r; return false; }
+    g_app_passo = 2;
     for (uint32_t off = 0; off < n; ) {
         u32 k = n - off > 0x10000 ? 0x10000 : n - off, w = 0;
-        if (R_FAILED(FSFILE_Write(h, &w, off, cia + off, k, 0)) || w != k) { AM_CancelCIAInstall(h); return false; }
+        if (R_FAILED(r = FSFILE_Write(h, &w, off, cia + off, k, 0)) || w != k) {
+            g_app_erro = r; AM_CancelCIAInstall(h); return false;
+        }
         off += k;
         op_etapa(T(T_INSTALANDO_APP), off, n);
     }
-    return R_SUCCEEDED(AM_FinishCiaInstall(h));
+    g_app_passo = 3;
+    if (R_FAILED(r = AM_FinishCiaInstallWithoutCommit(h))) { g_app_erro = r; return false; }
+    g_app_passo = 4;
+    if (R_FAILED(r = APT_GetProgramID(&tid)) || R_FAILED(r = AM_CommitImportTitles(MEDIATYPE_SD, 1, false, &tid))) {
+        g_app_erro = r; return false;
+    }
+    return true;
 }
 
 /* ---- fila de pecas (receita formato 2): baixa so o que nao esta no cartao ---- */
@@ -919,7 +938,7 @@ static void baixar_atualizacao(void)
     if (ok && acia && versao_numero(m.versao_inst) > versao_numero(VERSAO_INST)) {
         if (!baixar_conferindo(acia, T(T_APP_NOVO), &cia)) {
             if (instalar_app(cia, acia->tam)) { g_app_novo = true; op_linha(COR_VERDE, T(T_APP_ATUALIZADO), m.versao_inst); }
-            else op_linha(COR_ERRO, "%s", T(T_APP_FALHOU));
+            else op_linha(COR_ERRO, T(T_APP_FALHOU_COD), g_app_passo, (unsigned long)g_app_erro);
         }
         free(cia);
     }

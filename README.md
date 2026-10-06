@@ -14,11 +14,13 @@ O multiplayer local do jogo vira online:
 > Azahar, os três juntos na mesma sala e na mesma quest (até a 1.2). A
 > instalação foi testada no Old 3DS (1.5); o visual novo, no Azahar.
 >
-> **1.8 em teste (ainda não é a versão publicada):** armadura **Jolly Roger
+> **1.9 em teste (ainda não é a versão publicada):** armadura **Jolly Roger
 > (Pirate J)**, lâmina e atirador, homem e mulher, com o vale **Legend Voucher J**
-> da quest **JUMP - Small Soldier Frenzy** (DLC, HR 6); e o app passa a
+> da quest **JUMP - Small Soldier Frenzy** (DLC, HR 6); o patch passa a
 > **atualizar as quests já baixadas** quando uma delas é corrigida (por exemplo, o
-> tamanho dos monstros, que agora segue o P3rd). Testada só no Azahar até aqui.
+> tamanho dos monstros, que agora segue o P3rd); e o app corrige a
+> **autoatualização** (no console, o app 1.4 nunca conseguia se atualizar). A
+> troca das quests foi testada no Azahar; nos consoles, em teste.
 >
 > **Novidades da 1.7:** o Snake e a The Boss voltaram a ter **sombra** (o
 > conversor trocava a silhueta de sombra do corpo pela pele do pescoço).

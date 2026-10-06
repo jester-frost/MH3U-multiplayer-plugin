@@ -113,6 +113,7 @@ enum { IDIOMA_PT = 0, IDIOMA_EN, IDIOMA_ES, N_IDIOMAS };
     X(T_NAO_GRAVEI, "Não gravei no SD: vale só até fechar o app.", "Not saved to SD: only until the app closes.", "No se guardó en la SD: vale hasta cerrar la app.") \
     X(T_APP_ATUALIZADO, "App atualizado para %s.", "App updated to %s.", "App actualizada a %s.") \
     X(T_APP_FALHOU, "Não consegui atualizar o app.", "Could not update the app.", "No pude actualizar la app.") \
+    X(T_APP_FALHOU_COD, "App não atualizado (passo %d, AM: 0x%08lX).", "App not updated (step %d, AM: 0x%08lX).", "App no actualizada (paso %d, AM: 0x%08lX).") \
     X(T_FALHOU_TROCADO, "Falhou: nada foi trocado", "Failed: nothing was changed", "Falló: no se cambió nada") \
     X(T_TENTE, "Tente de novo mais tarde.", "Try again later.", "Inténtalo más tarde.") \
     X(T_PATCH_BAIXADO, "Patch baixado", "Patch downloaded", "Parche descargado") \
