@@ -10,17 +10,22 @@ O multiplayer local do jogo vira online:
   P2P não abre;
 - até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
-> **Versão 1.7.** O online foi testado em Old 3DS, New 3DS e no emulador
+> **Versão 1.9.** O online foi testado em Old 3DS, New 3DS e no emulador
 > Azahar, os três juntos na mesma sala e na mesma quest (até a 1.2). A
-> instalação foi testada no Old 3DS (1.5); o visual novo, no Azahar.
+> instalação foi testada no Old 3DS (1.5); o conteúdo novo, no Azahar.
 >
-> **1.9 em teste (ainda não é a versão publicada):** armadura **Jolly Roger
-> (Pirate J)**, lâmina e atirador, homem e mulher, com o vale **Legend Voucher J**
-> da quest **JUMP - Small Soldier Frenzy** (DLC, HR 6); o patch passa a
-> **atualizar as quests já baixadas** quando uma delas é corrigida (por exemplo, o
-> tamanho dos monstros, que agora segue o P3rd); e o app corrige a
-> **autoatualização** (no console, o app 1.4 nunca conseguia se atualizar). A
-> troca das quests foi testada no Azahar; nos consoles, em teste.
+> **Novidades da 1.9:**
+> - Armadura **Jolly Roger (Pirate J)**, lâmina e atirador, homem e mulher, com
+>   textura em alta, espadas e correntes com volume e brilho de metal. O vale
+>   **Legend Voucher J** vem da quest **JUMP - Small Soldier Frenzy** (DLC, HR 6),
+>   com o Crimson Qurupeco pequeno como no P3rd; com o vale, as peças aparecem no
+>   ferreiro.
+> - O tamanho dos monstros das quests do P3rd agora segue o original (o
+>   Nibelsnarf da MGS é gigante, o Uragaan da Phantom Uragaan é anão...). Quem já
+>   tinha baixado essas quests recebe a versão corrigida sozinho, ao abrir o jogo.
+> - O app corrige a **autoatualização**: no console, os apps até a 1.8 não
+>   conseguiam se atualizar. **Quem está com o app 1.4 a 1.7 precisa instalar o app
+>   novo uma vez pelo FBI** (`instalador/mh3u-online-instalador.cia`).
 >
 > **Novidades da 1.7:** o Snake e a The Boss voltaram a ter **sombra** (o
 > conversor trocava a silhueta de sombra do corpo pela pele do pescoço).
