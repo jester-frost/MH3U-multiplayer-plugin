@@ -10,9 +10,13 @@ O multiplayer local do jogo vira online:
   P2P não abre;
 - até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
-> **Versão 1.9.** O online foi testado em Old 3DS, New 3DS e no emulador
+> **Versão 1.10.** O online foi testado em Old 3DS, New 3DS e no emulador
 > Azahar, os três juntos na mesma sala e na mesma quest (até a 1.2). A
 > instalação foi testada no Old 3DS (1.5); o conteúdo novo, no Azahar.
+>
+> **Novidades da 1.10:** o download de quests (menu de DLC) funciona **sem o DNS
+> personalizado** no console e sem convite: o patch busca as quests no servidor do
+> projeto por um endereço próprio, aberto a todos. O DNS continua opcional.
 >
 > **Novidades da 1.9:**
 > - Armadura **Jolly Roger (Pirate J)**, lâmina e atirador, homem e mulher, com
