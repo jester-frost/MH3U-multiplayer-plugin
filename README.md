@@ -10,9 +10,24 @@ O multiplayer local do jogo vira online:
   P2P não abre;
 - até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
-> **Versão 1.10.** O online foi testado em Old 3DS, New 3DS e no emulador
-> Azahar, os três juntos na mesma sala e na mesma quest (até a 1.2). A
-> instalação foi testada no Old 3DS (1.5); o conteúdo novo, no Azahar.
+> **Versão 1.11.** O online foi testado em Old 3DS, New 3DS e no emulador
+> Azahar, juntos na mesma sala e na mesma quest; a 1.11 com até 4 jogadores
+> (Azahar dono, dois consoles e um Azahar com a 1.5). A instalação foi testada
+> no Old 3DS (1.5); o conteúdo novo, no Azahar. O app instalador continua o 1.10.
+>
+> **Novidades da 1.11:**
+> - O download de quests funciona **sem o DNS personalizado também no console**
+>   (antes dava o erro 022-0122 ou "An error has occurred").
+> - Patch bem mais leve: **857 KB de memória em vez de 1.561 KB**, e menos
+>   desvios no código do jogo.
+> - Correções de segurança e estabilidade no online: uma sala com dados
+>   maliciosos derrubava quem abria a lista de salas; respostas grandes do
+>   servidor chegavam pela metade (agora a lista mostra mais salas, com as dos
+>   amigos primeiro); entrada que falha não deixa mais você "preso" numa sala vazia.
+> - O som do set do Snake / The Boss vale **só para quem o veste** (antes o dono
+>   da sala com o set mudava o som de todo mundo).
+> - Na quest **MGS - Hunter Eater Mission**, o "!" quando o Nibelsnarf vê você e a
+>   música de luta do Metal Gear tocam **para todos**, com ou sem o set.
 >
 > **Novidades da 1.10:** o download de quests (menu de DLC) funciona **sem o DNS
 > personalizado** no console e sem convite: o patch busca as quests no servidor do

@@ -42,7 +42,7 @@ SHA_CODE = "80db9caa329faacfaa580e435fce99614029a4bc201b5a898f56ff8a9a2b9006"
 HEAP_IPS = os.path.join(RAIZ, "patches", "patchA-heap.ips")
 BASE = 0x100000
 LDR_PC = 0xE51FF004            # ldr pc, [pc, #-4]
-NATIVO_MAX_GANCHOS = 40         # plugin/nativo/ctrpf_nativo.hpp
+NATIVO_MAX_GANCHOS = 40         # plugin/nativo/ctrpf_nativo.hpp; vale o tamanho do simbolo no .elf; a leitura para no alvo 0
 NM = os.path.join(os.environ.get("DEVKITARM", "/opt/devkitpro/devkitARM"), "bin", "arm-none-eabi-nm")
 
 
@@ -151,8 +151,14 @@ def montar(elf, saida, modo80=False, de_a=None, n3ds_rapido=False):
     # ganchos
     tab = sim["g_nativoDestinos"] - base
     tramp = sim["g_nativoTramp"] - base
+    # tamanho da tabela no .elf: cheia, ela nao tem o zero final
+    max_ganchos = NATIVO_MAX_GANCHOS
+    for linha in subprocess.check_output([NM, "-S", elf], text=True).splitlines():
+        c = linha.split()
+        if len(c) == 4 and c[3] == "g_nativoDestinos":
+            max_ganchos = int(c[1], 16) // 8
     n = 0
-    while n < NATIVO_MAX_GANCHOS:          # a tabela pode estar cheia (sem o zero final)
+    while n < max_ganchos:
         alvo, fn = u32(blob, tab + n * 8), u32(blob, tab + n * 8 + 4)
         if not alvo: break
         o = alvo - BASE
@@ -172,6 +178,10 @@ def montar(elf, saida, modo80=False, de_a=None, n3ds_rapido=False):
         trechos = json.load(open(js))
         for t in trechos:
             b = bytes.fromhex(t["hex"])
+            if "antes" in t:            # troca em codigo do jogo: confere o original
+                antes = bytes.fromhex(t["antes"])
+                if bytes(code[t["off"]:t["off"] + len(antes)]) != antes:
+                    sys.exit(f"dados {os.path.basename(js)}: {t['off'] + BASE:#x} nao e o original esperado")
             code[t["off"]:t["off"] + len(b)] = b
         print(f"dados: {len(trechos)} trechos de {os.path.basename(js)}")
 
