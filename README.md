@@ -10,10 +10,25 @@ O multiplayer local do jogo vira online:
   P2P não abre;
 - até **4 jogadores**; se o dono sai, outro herda a sala e quem saiu volta.
 
-> **Versão 1.11.** O online foi testado em Old 3DS, New 3DS e no emulador
+> **Versão 1.12.** O online foi testado em Old 3DS, New 3DS e no emulador
 > Azahar, juntos na mesma sala e na mesma quest; a 1.11 com até 4 jogadores
 > (Azahar dono, dois consoles e um Azahar com a 1.5). A instalação foi testada
-> no Old 3DS (1.5); o conteúdo novo, no Azahar. O app instalador continua o 1.10.
+> no Old 3DS (1.5); o conteúdo da 1.12, no Azahar e no Cemu. O app instalador
+> continua o 1.10 (o código do patch não mudou desde a 1.11: a 1.12 é só conteúdo).
+>
+> **Novidades da 1.12:**
+> - **Rostos do Snake e da The Boss refeitos:** pele, barba e sobrancelhas com
+>   aparência humana (restauração de rosto por rede neural sobre a textura do
+>   P3rd) em vez das manchas da versão anterior.
+> - **Jolly Roger (Pirate J) feminina:** a ponta branca da gola volta a aparecer
+>   na axila (agora presa ao tronco, como no P3rd) e a junção do braço ficou limpa.
+> - **Texturas do 3DS mais leves:** metade da resolução anterior (256 no lado
+>   maior) com os mesmos desenhos, e os mipmaps refeitos — some a mancha colorida
+>   que aparecia de longe nas botas da Jolly Roger.
+> - **Wii U (Cemu):** o conteúdo do projeto (armaduras, quests de DLC, sons e
+>   músicas, reflexo de metal e luz corrigidos) sai pela primeira vez como pacote
+>   para o Cemu, com a mesma versão. Download e passo a passo no portal, aba
+>   *Crossplay (Cemu)*.
 >
 > **Novidades da 1.11:**
 > - O download de quests funciona **sem o DNS personalizado também no console**
